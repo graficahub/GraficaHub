@@ -3,95 +3,79 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSession, getUserRole } from "@/lib/auth";
-import AdminSidebar, { AdminSidebarToggle } from '@/components/admin/AdminSidebar'
-import AdminViewToggle from '@/components/admin/AdminViewToggle'
 
-/**
- * Layout do Painel Administrativo - GraficaHub
- * 
- * Proteção de rotas:
- * - Verifica se há sessão ativa do Supabase Auth
- * - Busca a role do usuário na tabela users
- * - Se não houver sessão → redireciona para /login
- * - Se role !== 'admin' → redireciona para /setup
- * - Permite acesso apenas se role === 'admin'
- */
-export default function AdminLayout({ children }: { children: ReactNode }) {
+type AdminLayoutProps = {
+  children: ReactNode;
+};
+
+export default function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter();
-  const [allowed, setAllowed] = useState(false);
-  const [checking, setChecking] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+  const [isAllowed, setIsAllowed] = useState(false);
 
   useEffect(() => {
-    const checkAccess = async () => {
-      // 1) Verifica se tem sessão
-      const session = await getSession();
+    let cancelled = false;
 
-      if (!session) {
-        router.replace("/login");
-        return;
+    const checkPermissions = async () => {
+      try {
+        const session = await getSession();
+
+        if (!session) {
+          if (!cancelled) {
+            router.replace("/login");
+          }
+          return;
+        }
+
+        const userId = session.user.id;
+        const role = await getUserRole(userId);
+        console.log("🔐 Role do usuário no /admin:", role);
+
+        if (cancelled) return;
+
+        if (role === "admin") {
+          setIsAllowed(true);
+        } else {
+          // usuário comum → manda para o setup
+          router.replace("/setup");
+        }
+      } catch (err) {
+        console.error("Erro ao checar permissões do admin:", err);
+        if (!cancelled) {
+          router.replace("/login");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsChecking(false);
+        }
       }
-
-      // 2) Busca role na tabela users
-      const role = await getUserRole(session.user.id);
-
-      console.log("Role detectada no /admin:", role);
-
-      if (role !== "admin") {
-        // Qualquer coisa que NÃO seja admin vai para /setup
-        router.replace("/setup");
-        return;
-      }
-
-      // 3) Libera renderização do painel admin
-      setAllowed(true);
-      setChecking(false);
     };
 
-    checkAccess();
+    checkPermissions();
+
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
-  if (checking) {
+  // Enquanto checa → só mostra o loading
+  if (isChecking) {
     return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center">
-        <div className="text-center text-white">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-slate-300">Verificando permissões...</p>
+      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-100">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
+          <p className="text-sm text-slate-300">Verificando permissões...</p>
         </div>
       </div>
     );
   }
 
-  if (!allowed) {
-    // Enquanto o router.replace não acontece, evita mostrar o admin
+  // Se não tem permissão, o router.replace já está redirecionando.
+  // Para evitar piscada do dashboard, não renderiza nada.
+  if (!isAllowed) {
     return null;
   }
 
-  return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
-      <div
-        className="fixed inset-0 pointer-events-none z-0"
-        style={{
-          background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.15) 100%)',
-        }}
-      />
-
-      <AdminSidebar
-        isMobileOpen={sidebarOpen}
-        onMobileClose={() => setSidebarOpen(false)}
-      />
-
-      {!sidebarOpen && <AdminSidebarToggle onClick={() => setSidebarOpen(true)} />}
-
-      <main className="md:ml-64 min-h-screen">
-        {/* Header com toggle de visão */}
-        <header className="border-b border-white/10 bg-white/5 backdrop-blur-sm">
-          <div className="px-4 md:px-8 py-4 flex items-center justify-end">
-            <AdminViewToggle />
-          </div>
-        </header>
-        {children}
-      </main>
-    </div>
-  );
+  // Admin autorizado → renderiza o painel normalmente
+  return <>{children}</>;
 }
