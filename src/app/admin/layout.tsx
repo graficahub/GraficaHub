@@ -2,10 +2,18 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { isAdmin } from '@/utils/admin'
 import AdminSidebar, { AdminSidebarToggle } from '@/components/admin/AdminSidebar'
 import AdminViewToggle from '@/components/admin/AdminViewToggle'
+import { getSession } from '@/lib/auth'
 
+/**
+ * Layout do Painel Administrativo - GraficaHub
+ * 
+ * Proteção de rotas:
+ * - Verifica se há sessão ativa do Supabase Auth
+ * - Se não houver sessão, redireciona para /login
+ * - Exibe loading enquanto verifica a sessão
+ */
 export default function AdminLayout({
   children,
 }: {
@@ -16,14 +24,26 @@ export default function AdminLayout({
   const [isChecking, setIsChecking] = useState(true)
 
   useEffect(() => {
-    // Verifica se é admin
-    if (typeof window !== 'undefined') {
-      if (!isAdmin()) {
-        router.replace('/auth')
-      } else {
-        setIsChecking(false)
+    // Verifica se há sessão ativa do Supabase
+    const checkAuth = async () => {
+      try {
+        const session = await getSession()
+        
+        if (!session) {
+          // Não há sessão - redireciona para login
+          router.replace('/login')
+        } else {
+          // Sessão válida - permite acesso
+          setIsChecking(false)
+        }
+      } catch (error) {
+        console.error('❌ Erro ao verificar sessão:', error)
+        // Em caso de erro, redireciona para login por segurança
+        router.replace('/login')
       }
     }
+
+    checkAuth()
   }, [router])
 
   if (isChecking) {
@@ -31,7 +51,7 @@ export default function AdminLayout({
       <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center">
         <div className="text-center text-white">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-slate-300">Verificando permissões...</p>
+          <p className="text-slate-300">Verificando autenticação...</p>
         </div>
       </div>
     )

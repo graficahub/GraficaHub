@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { LayoutDashboard, Users, Package, FileText, Settings, LogOut, Ticket, History, Bell, ScrollText } from 'lucide-react'
-import { useAuth } from '@/hooks/useAuth'
+import { signOut } from '@/lib/auth'
 import AdminSaveControls from './AdminSaveControls'
 
 interface NavItem {
@@ -21,7 +21,6 @@ interface AdminSidebarProps {
 export default function AdminSidebar({ isMobileOpen = false, onMobileClose }: AdminSidebarProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const { logout } = useAuth()
   const [isCollapsed, setIsCollapsed] = useState(false)
 
   const navItems: NavItem[] = [
@@ -85,7 +84,19 @@ export default function AdminSidebar({ isMobileOpen = false, onMobileClose }: Ad
   }
 
   const handleLogout = async () => {
-    await logout()
+    try {
+      const success = await signOut()
+      if (success) {
+        router.push('/login')
+      } else {
+        console.error('❌ Erro ao fazer logout')
+        // Mesmo com erro, redireciona para login
+        router.push('/login')
+      }
+    } catch (error) {
+      console.error('❌ Erro ao fazer logout:', error)
+      router.push('/login')
+    }
   }
 
   return (
