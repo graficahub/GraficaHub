@@ -19,7 +19,7 @@ import Link from 'next/link'
 import Card from '@/components/ui/Card'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
-import { signInWithEmail } from '@/lib/auth'
+import { signInWithEmail, getUserRole } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter()
@@ -49,54 +49,54 @@ export default function LoginPage() {
   }
 
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    setError(null)
-
-    console.log('Enviando formulário de LOGIN', { email })
+    e.preventDefault();
+    setError(null);
 
     if (!validateForm()) {
-      console.log('❌ Validação do formulário falhou')
-      return
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
-      console.log('🔐 Chamando signInWithEmail do Supabase...')
-      const response = await signInWithEmail(email, password)
+      console.log("Enviando formulário de LOGIN", { email });
 
-      if (response.error) {
-        console.error('Erro Supabase login', response.error)
+      const { data, error } = await signInWithEmail(email, password);
+
+      if (error || !data?.user) {
+        console.error("Erro Supabase login", error);
         // Mensagens de erro amigáveis
-        let errorMessage = 'Erro ao fazer login. Tente novamente.'
+        let errorMessage = 'Erro ao fazer login. Tente novamente.';
         
-        if (response.error.message.includes('Invalid login credentials')) {
-          errorMessage = 'Email ou senha incorretos. Verifique suas credenciais.'
-        } else if (response.error.message.includes('Email not confirmed')) {
-          errorMessage = 'Por favor, confirme seu email antes de fazer login.'
+        if (error?.message?.includes('Invalid login credentials')) {
+          errorMessage = 'Email ou senha incorretos. Verifique suas credenciais.';
+        } else if (error?.message?.includes('Email not confirmed')) {
+          errorMessage = 'Por favor, confirme seu email antes de fazer login.';
         } else {
-          errorMessage = response.error.message || errorMessage
+          errorMessage = error?.message || errorMessage;
         }
 
-        setError(errorMessage)
-        setIsLoading(false)
-        return
+        setError(errorMessage);
+        setIsLoading(false);
+        return;
       }
 
-      if (response.user && response.session) {
-        console.log('✅ Login bem-sucedido! Redirecionando para /admin')
-        // Login bem-sucedido - redireciona para o painel admin
-        router.push('/admin')
+      console.log("✅ Login bem-sucedido, buscando role...");
+
+      const role = await getUserRole(data.user.id);
+
+      console.log("Role após login:", role);
+
+      if (role === "admin") {
+        router.replace("/admin");
       } else {
-        console.error('❌ Login falhou: usuário ou sessão não retornados')
-        setError('Erro ao fazer login. Tente novamente.')
-        setIsLoading(false)
+        router.replace("/setup");
       }
     } catch (err) {
-      console.error('❌ Erro no login:', err)
-      console.error('Erro Supabase login', err)
-      setError('Erro inesperado ao fazer login. Tente novamente.')
-      setIsLoading(false)
+      console.error("Erro inesperado no login:", err);
+      setError("Erro inesperado ao fazer login.");
+    } finally {
+      setIsLoading(false);
     }
   }
 

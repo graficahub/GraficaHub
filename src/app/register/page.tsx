@@ -20,7 +20,7 @@ import Link from 'next/link'
 import Card from '@/components/ui/Card'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
-import { signUpWithEmail } from '@/lib/auth'
+import { signUpWithEmail, getUserRole } from "@/lib/auth";
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -55,70 +55,53 @@ export default function RegisterPage() {
   }
 
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    setError(null)
-
-    console.log('Enviando formulário de REGISTRO', { email, name })
+    e.preventDefault();
+    setError(null);
 
     if (!validateForm()) {
-      console.log('❌ Validação do formulário falhou')
-      return
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
-      console.log('📝 Chamando signUpWithEmail do Supabase...')
-      const response = await signUpWithEmail(email, password, name)
+      console.log("Enviando formulário de REGISTRO", { email, name });
 
-      if (response.error) {
-        console.error('Erro Supabase registro', response.error)
+      const { data, error } = await signUpWithEmail(name, email, password);
+
+      if (error || !data?.user) {
+        console.error("Erro Supabase registro", error);
         // Mensagens de erro amigáveis
-        let errorMessage = 'Erro ao criar conta. Tente novamente.'
+        let errorMessage = 'Erro ao criar conta. Tente novamente.';
         
-        if (response.error.message.includes('User already registered')) {
-          errorMessage = 'Este email já está cadastrado. Faça login ou use outro email.'
-        } else if (response.error.message.includes('Password')) {
-          errorMessage = 'A senha não atende aos requisitos de segurança.'
+        if (error?.message?.includes('User already registered')) {
+          errorMessage = 'Este email já está cadastrado. Faça login ou use outro email.';
+        } else if (error?.message?.includes('Password')) {
+          errorMessage = 'A senha não atende aos requisitos de segurança.';
         } else {
-          errorMessage = response.error.message || errorMessage
+          errorMessage = error?.message || errorMessage;
         }
 
-        setError(errorMessage)
-        setIsLoading(false)
-        return
+        setError(errorMessage);
+        setIsLoading(false);
+        return;
       }
 
-      if (response.user) {
-        console.log('✅ Cadastro bem-sucedido!', { 
-          userId: response.user.id, 
-          userInserted: response.userInserted 
-        })
-        // Cadastro bem-sucedido
-        // Nota: Se o Supabase estiver configurado para exigir confirmação de email,
-        // o usuário pode não ter sessão imediatamente. Nesse caso, redirecione para uma
-        // página de confirmação. Aqui assumimos que a sessão está disponível.
-        
-        if (response.session) {
-          console.log('✅ Sessão criada. Redirecionando para /admin')
-          // Redireciona para o painel admin
-          router.push('/admin')
-        } else {
-          console.log('⚠️ Sessão não disponível - email precisa ser confirmado')
-          // Email precisa ser confirmado
-          setError('Por favor, verifique seu email para confirmar a conta antes de fazer login.')
-          setIsLoading(false)
-        }
+      console.log("✅ Cadastro ok, buscando role...");
+
+      const role = await getUserRole(data.user.id);
+      console.log("Role após cadastro:", role);
+
+      if (role === "admin") {
+        router.replace("/admin");
       } else {
-        console.error('❌ Cadastro falhou: usuário não retornado')
-        setError('Erro ao criar conta. Tente novamente.')
-        setIsLoading(false)
+        router.replace("/setup");
       }
     } catch (err) {
-      console.error('❌ Erro no cadastro:', err)
-      console.error('Erro Supabase registro', err)
-      setError('Erro inesperado ao criar conta. Tente novamente.')
-      setIsLoading(false)
+      console.error("Erro inesperado no registro:", err);
+      setError("Erro inesperado ao criar conta.");
+    } finally {
+      setIsLoading(false);
     }
   }
 

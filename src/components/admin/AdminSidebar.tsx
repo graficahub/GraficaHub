@@ -85,14 +85,12 @@ export default function AdminSidebar({ isMobileOpen = false, onMobileClose }: Ad
 
   const handleLogout = async () => {
     try {
-      const success = await signOut()
-      if (success) {
-        router.push('/login')
-      } else {
-        console.error('❌ Erro ao fazer logout')
-        // Mesmo com erro, redireciona para login
-        router.push('/login')
+      const { error } = await signOut()
+      if (error) {
+        console.error('❌ Erro ao fazer logout:', error)
       }
+      // Sempre redireciona para login, mesmo se houver erro
+      router.push('/login')
     } catch (error) {
       console.error('❌ Erro ao fazer logout:', error)
       router.push('/login')
