@@ -58,16 +58,21 @@ export default function RegisterPage() {
     e.preventDefault()
     setError(null)
 
+    console.log('Enviando formulário de REGISTRO', { email, name })
+
     if (!validateForm()) {
+      console.log('❌ Validação do formulário falhou')
       return
     }
 
     setIsLoading(true)
 
     try {
+      console.log('📝 Chamando signUpWithEmail do Supabase...')
       const response = await signUpWithEmail(email, password, name)
 
       if (response.error) {
+        console.error('Erro Supabase registro', response.error)
         // Mensagens de erro amigáveis
         let errorMessage = 'Erro ao criar conta. Tente novamente.'
         
@@ -85,25 +90,33 @@ export default function RegisterPage() {
       }
 
       if (response.user) {
+        console.log('✅ Cadastro bem-sucedido!', { 
+          userId: response.user.id, 
+          userInserted: response.userInserted 
+        })
         // Cadastro bem-sucedido
         // Nota: Se o Supabase estiver configurado para exigir confirmação de email,
         // o usuário pode não ter sessão imediatamente. Nesse caso, redirecione para uma
         // página de confirmação. Aqui assumimos que a sessão está disponível.
         
         if (response.session) {
+          console.log('✅ Sessão criada. Redirecionando para /admin')
           // Redireciona para o painel admin
           router.push('/admin')
         } else {
+          console.log('⚠️ Sessão não disponível - email precisa ser confirmado')
           // Email precisa ser confirmado
           setError('Por favor, verifique seu email para confirmar a conta antes de fazer login.')
           setIsLoading(false)
         }
       } else {
+        console.error('❌ Cadastro falhou: usuário não retornado')
         setError('Erro ao criar conta. Tente novamente.')
         setIsLoading(false)
       }
     } catch (err) {
       console.error('❌ Erro no cadastro:', err)
+      console.error('Erro Supabase registro', err)
       setError('Erro inesperado ao criar conta. Tente novamente.')
       setIsLoading(false)
     }

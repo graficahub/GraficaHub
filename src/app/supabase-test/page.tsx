@@ -43,7 +43,7 @@ export default async function Page() {
       ) : (
         <div>
           <h2 style={{ color: "#10b981", marginBottom: "8px" }}>✅ Conexão bem-sucedida!</h2>
-          <p style={{ color: "#64748b", marginBottom: "8px" }}>Dados retornados da tabela "users":</p>
+          <p style={{ color: "#64748b", marginBottom: "8px" }}>Dados retornados da tabela &quot;users&quot;:</p>
           <pre style={{ backgroundColor: "#1e293b", padding: "16px", borderRadius: "8px", overflow: "auto" }}>
             {JSON.stringify(data, null, 2)}
           </pre>

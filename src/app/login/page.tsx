@@ -52,16 +52,21 @@ export default function LoginPage() {
     e.preventDefault()
     setError(null)
 
+    console.log('Enviando formulário de LOGIN', { email })
+
     if (!validateForm()) {
+      console.log('❌ Validação do formulário falhou')
       return
     }
 
     setIsLoading(true)
 
     try {
+      console.log('🔐 Chamando signInWithEmail do Supabase...')
       const response = await signInWithEmail(email, password)
 
       if (response.error) {
+        console.error('Erro Supabase login', response.error)
         // Mensagens de erro amigáveis
         let errorMessage = 'Erro ao fazer login. Tente novamente.'
         
@@ -79,14 +84,17 @@ export default function LoginPage() {
       }
 
       if (response.user && response.session) {
+        console.log('✅ Login bem-sucedido! Redirecionando para /admin')
         // Login bem-sucedido - redireciona para o painel admin
         router.push('/admin')
       } else {
+        console.error('❌ Login falhou: usuário ou sessão não retornados')
         setError('Erro ao fazer login. Tente novamente.')
         setIsLoading(false)
       }
     } catch (err) {
       console.error('❌ Erro no login:', err)
+      console.error('Erro Supabase login', err)
       setError('Erro inesperado ao fazer login. Tente novamente.')
       setIsLoading(false)
     }
