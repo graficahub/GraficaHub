@@ -27,7 +27,7 @@ export default function CriarPedidoPage() {
 
   useEffect(() => {
     if (!user) {
-      router.push('/auth')
+      router.push('/login')
       return
     }
 

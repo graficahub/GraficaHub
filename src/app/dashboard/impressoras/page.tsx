@@ -64,7 +64,7 @@ export default function ImpressorasPage() {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      router.replace('/auth')
+      router.replace('/login')
     }
   }, [user, isLoading, router])
 

@@ -20,7 +20,7 @@ export default function PedidoDetalhesPage() {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      router.replace('/auth')
+      router.replace('/login')
       return
     }
 

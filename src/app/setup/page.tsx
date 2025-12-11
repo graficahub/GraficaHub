@@ -56,8 +56,8 @@ export default function SetupPage() {
   // Proteção de rota: redireciona se não estiver logado
   useEffect(() => {
     if (!authLoading && !user) {
-      console.log('🚫 Usuário não autenticado, redirecionando para /auth')
-      router.replace('/auth')
+      console.log('🚫 Usuário não autenticado, redirecionando para /login')
+      router.replace('/login')
     } else if (!authLoading && user) {
       // Se o usuário já completou o onboarding, redireciona para dashboard
       if (user.cpfCnpj && user.cpfCnpj.trim() !== '') {

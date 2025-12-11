@@ -428,8 +428,8 @@ export function useAuth() {
       setError(null)
       setIsLoading(false)
 
-      console.log('✅ Logout bem-sucedido! Redirecionando para /auth')
-      router.replace('/auth')
+      console.log('✅ Logout bem-sucedido! Redirecionando para /login')
+      router.replace('/login')
     } catch (err) {
       console.error('❌ Erro ao fazer logout:', err)
       setIsLoading(false)

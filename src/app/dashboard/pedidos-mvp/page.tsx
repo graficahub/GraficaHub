@@ -32,7 +32,7 @@ export default function PedidosMVPPage() {
 
   useEffect(() => {
     if (!user) {
-      router.push('/auth')
+      router.push('/login')
       return
     }
 

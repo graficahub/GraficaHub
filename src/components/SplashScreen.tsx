@@ -18,9 +18,9 @@ export default function SplashScreen() {
       setIsExiting(true)
       // Aguarda a animação de fade-out terminar antes de redirecionar
       setTimeout(() => {
-        console.log('➡️ SplashScreen: Redirecionando para /auth')
+        console.log('➡️ SplashScreen: Redirecionando para /login')
         // Usa replace para evitar problemas de histórico
-        router.replace('/auth')
+        router.replace('/login')
       }, 800) // Duração da animação de fade-out
     }, 5000) // Tempo total: 5 segundos
 

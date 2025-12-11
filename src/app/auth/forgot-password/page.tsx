@@ -9,7 +9,7 @@ export default function ForgotPasswordPage() {
           Esta funcionalidade será implementada em breve.
         </p>
         <a
-          href="/auth"
+          href="/login"
           className="text-blue-400 hover:text-blue-300 hover:underline transition-colors"
         >
           Voltar para login

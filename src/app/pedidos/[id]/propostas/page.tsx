@@ -19,7 +19,7 @@ export default function PropostasPage() {
   // Proteção de rota
   useEffect(() => {
     if (!isLoading && !user) {
-      router.replace('/auth')
+      router.replace('/login')
     }
   }, [user, isLoading, router])
 

@@ -33,7 +33,7 @@ export default function MateriaisV2Page() {
 
   useEffect(() => {
     if (!user) {
-      router.replace('/auth')
+      router.replace('/login')
       return
     }
     loadMaterials()

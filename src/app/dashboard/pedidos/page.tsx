@@ -44,7 +44,7 @@ export default function PedidosPage() {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      router.replace('/auth')
+      router.replace('/login')
     }
   }, [user, isLoading, router])
 

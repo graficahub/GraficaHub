@@ -108,7 +108,7 @@ export default function MateriaisPage() {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      router.replace('/auth')
+      router.replace('/login')
     }
   }, [user, isLoading, router])
 

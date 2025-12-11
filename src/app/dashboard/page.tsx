@@ -176,7 +176,7 @@ export default function DashboardPage() {
     if (!isLoading) {
       // Se não for usuário, redireciona para login
       if (!user) {
-        router.replace('/auth')
+        router.replace('/login')
         return
       }
       

@@ -25,7 +25,7 @@ export default function RelatoriosPage() {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      router.replace('/auth')
+      router.replace('/login')
     }
   }, [user, isLoading, router])
 
