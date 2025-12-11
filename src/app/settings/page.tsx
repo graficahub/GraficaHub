@@ -3,6 +3,7 @@
 import { useEffect, useState, FormEvent, ChangeEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth, Address } from '@/hooks/useAuth'
+import { supabase } from '@/lib/supabaseClient'
 import { motion } from 'framer-motion'
 import Card from '@/components/ui/Card'
 import Input from '@/components/ui/Input'
@@ -11,6 +12,10 @@ import Button from '@/components/ui/Button'
 export default function SettingsPage() {
   const { user, isLoading, updateUser } = useAuth()
   const router = useRouter()
+
+  // Estados de autenticação com Supabase
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   // Estados do formulário
   const [displayName, setDisplayName] = useState('')
@@ -33,9 +38,33 @@ export default function SettingsPage() {
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
-  // Carrega dados do usuário ao montar o componente
+  // Verificação de autenticação com Supabase
   useEffect(() => {
-    if (user) {
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        
+        if (!session) {
+          // Não há sessão → redireciona para login
+          router.replace('/login')
+          return
+        }
+
+        // Há sessão → usuário autenticado
+        setIsAuthenticated(true)
+        setIsCheckingAuth(false)
+      } catch (error) {
+        console.error('❌ Erro ao verificar autenticação:', error)
+        router.replace('/login')
+      }
+    }
+
+    checkAuth()
+  }, [router])
+
+  // Carrega dados do usuário ao montar o componente (apenas após autenticação confirmada)
+  useEffect(() => {
+    if (isAuthenticated && user) {
       setDisplayName(user.displayName || user.companyName)
       setPhone(user.phone || '')
       setAddress(user.address || {
@@ -50,14 +79,7 @@ export default function SettingsPage() {
       setLogoUrl(user.logoUrl)
       setLogoPreview(user.logoUrl)
     }
-  }, [user])
-
-  // Proteção de rota
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.replace('/login')
-    }
-  }, [user, isLoading, router])
+  }, [user, isAuthenticated])
 
   // Validação do formulário
   const validateForm = (): boolean => {
@@ -185,22 +207,51 @@ export default function SettingsPage() {
     }
   }
 
-  // Loading
-  if (isLoading) {
+  // Loading enquanto verifica autenticação
+  if (isCheckingAuth) {
     return (
       <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
         <main className="min-h-screen flex flex-col items-center justify-center">
           <div className="text-center text-white">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-            <p className="text-slate-300">Carregando...</p>
+            <p className="text-slate-300">Verificando autenticação...</p>
           </div>
         </main>
       </div>
     )
   }
 
-  if (!user) {
+  // Se não estiver autenticado, não renderiza (já foi redirecionado)
+  if (!isAuthenticated) {
     return null
+  }
+
+  // Loading enquanto carrega dados do usuário
+  if (isLoading) {
+    return (
+      <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+        <main className="min-h-screen flex flex-col items-center justify-center">
+          <div className="text-center text-white">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+            <p className="text-slate-300">Carregando configurações...</p>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  // Se não houver dados do usuário ainda, mostra loading
+  if (!user) {
+    return (
+      <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+        <main className="min-h-screen flex flex-col items-center justify-center">
+          <div className="text-center text-white">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+            <p className="text-slate-300">Carregando dados do usuário...</p>
+          </div>
+        </main>
+      </div>
+    )
   }
 
   return (
