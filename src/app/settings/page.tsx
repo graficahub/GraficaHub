@@ -164,6 +164,21 @@ export default function SettingsPage() {
       } catch (err) {
         console.error('❌ Erro inesperado ao carregar configurações do usuário:', err)
         if (!isCancelled) {
+          // Em caso de erro inesperado, tenta pelo menos criar um perfil mínimo se tiver sessão
+          try {
+            const { data: { session } } = await supabase.auth.getSession()
+            if (session?.user) {
+              const minimalProfile: UserProfile = {
+                id: session.user.id,
+                email: session.user.email ?? '',
+                role: 'user',
+              }
+              setUserProfile(minimalProfile)
+              setDisplayName(session.user.email?.split('@')[0] || '')
+            }
+          } catch {
+            // Se nem isso funcionar, deixa userProfile como null
+          }
           setIsLoading(false)
         }
       }
@@ -321,20 +336,26 @@ export default function SettingsPage() {
         <main className="min-h-screen flex flex-col items-center justify-center">
           <div className="text-center text-white">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-            <p className="text-slate-300">Carregando configurações...</p>
+            <p className="text-slate-300">Carregando informações do usuário...</p>
           </div>
         </main>
       </div>
     )
   }
 
-  // Se não houver perfil do usuário (mesmo após loading), mostra mensagem
+  // Se não houver perfil do usuário (mesmo após loading), mostra mensagem amigável
+  // Não redireciona para /login - apenas mostra que o perfil não foi encontrado
   if (!userProfile) {
     return (
       <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
         <main className="min-h-screen flex flex-col items-center justify-center">
-          <div className="text-center text-white">
-            <p className="text-slate-300 mb-4">Erro ao carregar dados do usuário.</p>
+          <div className="text-center text-white max-w-md px-4">
+            <p className="text-slate-300 mb-4">
+              Não foi possível carregar seu perfil completo, mas você continua logado.
+            </p>
+            <p className="text-slate-400 text-sm mb-6">
+              Você pode continuar usando o sistema normalmente.
+            </p>
             <Button onClick={() => router.push('/dashboard')}>
               Voltar ao dashboard
             </Button>
