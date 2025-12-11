@@ -64,10 +64,9 @@ export default function SetupPage() {
         console.log('✅ Onboarding já completo, redirecionando para /dashboard')
         router.replace('/dashboard')
       } else {
-        // Preenche os campos se já tiver dados parciais
-        if (user.cpfCnpj) {
-          setCpfCnpj(user.cpfCnpj)
-        }
+        // Preenche os campos se já tiver dados parciais (apenas na primeira vez)
+        // Evita resetar o estado se o usuário já começou a preencher
+        setCpfCnpj(prev => prev || user.cpfCnpj || '')
         if (user.printers && user.printers.length > 0) {
           setPrinters(user.printers)
         }
@@ -126,17 +125,29 @@ export default function SetupPage() {
       newErrors.cpfCnpj = 'CPF/CNPJ é obrigatório'
     }
 
-    // Valida impressoras (nome não é mais obrigatório)
-    const invalidPrinters = printers.filter(p => 
-      !p.width || !p.inkTechnology
+    // Valida impressoras: filtra apenas as válidas e verifica se há pelo menos uma
+    const validPrinters = printers.filter(p => 
+      p.width && p.width.trim() !== '' && p.inkTechnology && p.inkTechnology.trim() !== ''
     )
 
-    if (invalidPrinters.length > 0) {
-      newErrors.printers = 'Todas as impressoras devem ter largura e tecnologia preenchidos'
-    }
-
-    if (printers.length === 0) {
-      newErrors.printers = 'Adicione pelo menos uma impressora'
+    // Verifica se há pelo menos uma impressora válida
+    if (validPrinters.length === 0) {
+      // Verifica se há impressoras no array mas todas estão vazias
+      if (printers.length === 0) {
+        newErrors.printers = 'Adicione pelo menos uma impressora'
+      } else {
+        // Há impressoras mas nenhuma está válida (preenchida)
+        newErrors.printers = 'Adicione pelo menos uma impressora com largura e tecnologia preenchidos'
+      }
+    } else {
+      // Verifica se há alguma impressora parcialmente preenchida (tem width mas não tecnologia ou vice-versa)
+      const partialPrinters = printers.filter(p => 
+        (p.width && p.width.trim() !== '') !== (p.inkTechnology && p.inkTechnology.trim() !== '')
+      )
+      
+      if (partialPrinters.length > 0) {
+        newErrors.printers = 'Todas as impressoras devem ter largura e tecnologia preenchidos'
+      }
     }
 
     setErrors(newErrors)
@@ -149,8 +160,11 @@ export default function SetupPage() {
     setSaveError(null)
 
     console.log('📤 Submetendo formulário de onboarding')
+    console.log('📋 Estado atual:', { cpfCnpj, printersCount: printers.length, printers })
 
-    if (!validateForm()) {
+    // Valida o formulário antes de prosseguir
+    const isValid = validateForm()
+    if (!isValid) {
       console.log('❌ Validação falhou', errors)
       return
     }
