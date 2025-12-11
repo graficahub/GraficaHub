@@ -2,20 +2,41 @@
 
 import { useEffect, useState, FormEvent, ChangeEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth, Address } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabaseClient'
 import { motion } from 'framer-motion'
 import Card from '@/components/ui/Card'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 
+type Address = {
+  street: string
+  number: string
+  complement?: string
+  neighborhood: string
+  city: string
+  state: string
+  zipCode: string
+}
+
+type UserProfile = {
+  id: string
+  email: string
+  role: string
+  name?: string
+  full_name?: string
+  phone?: string
+  address?: Address
+  logo_url?: string
+  display_name?: string
+  company_name?: string
+}
+
 export default function SettingsPage() {
-  const { user, isLoading, updateUser } = useAuth()
   const router = useRouter()
 
-  // Estados de autenticação com Supabase
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  // Estados de loading e dados do usuário
+  const [isLoading, setIsLoading] = useState(true)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
 
   // Estados do formulário
   const [displayName, setDisplayName] = useState('')
@@ -38,48 +59,122 @@ export default function SettingsPage() {
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
-  // Verificação de autenticação com Supabase
+  // Carrega dados do usuário do Supabase
   useEffect(() => {
-    const checkAuth = async () => {
+    let isCancelled = false
+
+    async function loadUser() {
+      setIsLoading(true)
+
       try {
-        const { data: { session } } = await supabase.auth.getSession()
-        
-        if (!session) {
-          // Não há sessão → redireciona para login
-          router.replace('/login')
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+        if (sessionError) {
+          console.error('❌ Erro ao obter sessão em /settings:', sessionError)
+          if (!isCancelled) {
+            setIsLoading(false)
+            router.replace('/login')
+          }
           return
         }
 
-        // Há sessão → usuário autenticado
-        setIsAuthenticated(true)
-        setIsCheckingAuth(false)
-      } catch (error) {
-        console.error('❌ Erro ao verificar autenticação:', error)
-        router.replace('/login')
+        if (!session?.user) {
+          console.warn('⚠️ Nenhum usuário em sessão em /settings')
+          if (!isCancelled) {
+            setIsLoading(false)
+            router.replace('/login')
+          }
+          return
+        }
+
+        const userId = session.user.id
+
+        // Busca dados do usuário na tabela users
+        const { data, error } = await supabase
+          .from('users')
+          .select('id, email, role, name, full_name, phone, address, logo_url, display_name, company_name')
+          .eq('id', userId)
+          .maybeSingle() // use maybeSingle para não quebrar se não existir
+
+        if (error) {
+          console.warn('⚠️ Erro ao buscar perfil na tabela users em /settings:', error)
+
+          // Se for erro de RLS ou NOT FOUND, não fique em loading eterno
+          if (!isCancelled) {
+            // Usa dados mínimos da sessão
+            const minimalProfile: UserProfile = {
+              id: userId,
+              email: session.user.email ?? '',
+              role: 'user',
+            }
+            setUserProfile(minimalProfile)
+            setDisplayName(session.user.email?.split('@')[0] || '')
+            setIsLoading(false)
+          }
+          return
+        }
+
+        if (!data) {
+          console.warn('⚠️ Perfil não encontrado na tabela users em /settings. Usando dados mínimos da sessão.')
+          if (!isCancelled) {
+            // Preenche o estado com dados da sessão apenas
+            const minimalProfile: UserProfile = {
+              id: userId,
+              email: session.user.email ?? '',
+              role: 'user',
+            }
+            setUserProfile(minimalProfile)
+            setDisplayName(session.user.email?.split('@')[0] || '')
+            setIsLoading(false)
+          }
+          return
+        }
+
+        // Dados encontrados → preenche o formulário
+        if (!isCancelled) {
+          setUserProfile(data)
+          
+          // Preenche campos do formulário
+          setDisplayName(data.display_name || data.company_name || data.name || data.full_name || data.email?.split('@')[0] || '')
+          setPhone(data.phone || '')
+          
+          // Parse do endereço se for string JSON
+          if (data.address) {
+            try {
+              const parsedAddress = typeof data.address === 'string' ? JSON.parse(data.address) : data.address
+              setAddress({
+                street: parsedAddress.street || '',
+                number: parsedAddress.number || '',
+                complement: parsedAddress.complement || '',
+                neighborhood: parsedAddress.neighborhood || '',
+                city: parsedAddress.city || '',
+                state: parsedAddress.state || '',
+                zipCode: parsedAddress.zipCode || '',
+              })
+            } catch {
+              // Se não conseguir fazer parse, deixa vazio
+            }
+          }
+          
+          setLogoUrl(data.logo_url || null)
+          setLogoPreview(data.logo_url || null)
+          
+          setIsLoading(false)
+        }
+      } catch (err) {
+        console.error('❌ Erro inesperado ao carregar configurações do usuário:', err)
+        if (!isCancelled) {
+          setIsLoading(false)
+        }
       }
     }
 
-    checkAuth()
-  }, [router])
+    loadUser()
 
-  // Carrega dados do usuário ao montar o componente (apenas após autenticação confirmada)
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      setDisplayName(user.displayName || user.companyName)
-      setPhone(user.phone || '')
-      setAddress(user.address || {
-        street: '',
-        number: '',
-        complement: '',
-        neighborhood: '',
-        city: '',
-        state: '',
-        zipCode: '',
-      })
-      setLogoUrl(user.logoUrl)
-      setLogoPreview(user.logoUrl)
+    return () => {
+      isCancelled = true
     }
-  }, [user, isAuthenticated])
+  }, [router])
 
   // Validação do formulário
   const validateForm = (): boolean => {
@@ -185,13 +280,25 @@ export default function SettingsPage() {
             }
           : null
 
-      // Atualiza o usuário
-      await updateUser({
-        displayName: displayName.trim(),
-        phone: phone.trim() || null,
-        address: addressData,
-        logoUrl: logoUrl,
-      })
+      // Atualiza o usuário na tabela users do Supabase
+      if (!userProfile) {
+        throw new Error('Perfil do usuário não encontrado')
+      }
+
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({
+          display_name: displayName.trim(),
+          company_name: displayName.trim(),
+          phone: phone.trim() || null,
+          address: addressData,
+          logo_url: logoUrl,
+        })
+        .eq('id', userProfile.id)
+
+      if (updateError) {
+        throw updateError
+      }
 
       setSaveSuccess(true)
       setIsSaving(false)
@@ -205,25 +312,6 @@ export default function SettingsPage() {
       setSaveError('Erro ao salvar configurações. Tente novamente.')
       setIsSaving(false)
     }
-  }
-
-  // Loading enquanto verifica autenticação
-  if (isCheckingAuth) {
-    return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
-        <main className="min-h-screen flex flex-col items-center justify-center">
-          <div className="text-center text-white">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-            <p className="text-slate-300">Verificando autenticação...</p>
-          </div>
-        </main>
-      </div>
-    )
-  }
-
-  // Se não estiver autenticado, não renderiza (já foi redirecionado)
-  if (!isAuthenticated) {
-    return null
   }
 
   // Loading enquanto carrega dados do usuário
@@ -240,14 +328,16 @@ export default function SettingsPage() {
     )
   }
 
-  // Se não houver dados do usuário ainda, mostra loading
-  if (!user) {
+  // Se não houver perfil do usuário (mesmo após loading), mostra mensagem
+  if (!userProfile) {
     return (
       <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
         <main className="min-h-screen flex flex-col items-center justify-center">
           <div className="text-center text-white">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-            <p className="text-slate-300">Carregando dados do usuário...</p>
+            <p className="text-slate-300 mb-4">Erro ao carregar dados do usuário.</p>
+            <Button onClick={() => router.push('/dashboard')}>
+              Voltar ao dashboard
+            </Button>
           </div>
         </main>
       </div>
@@ -332,7 +422,7 @@ export default function SettingsPage() {
                 <Input
                   label="Email de contato"
                   type="email"
-                  value={user.email}
+                  value={userProfile.email}
                   disabled
                   className="opacity-60 cursor-not-allowed"
                 />
