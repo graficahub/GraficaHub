@@ -11,15 +11,7 @@ import Input from '@/components/ui/Input'
 interface User {
   id: string
   email: string
-  name?: string
-  full_name?: string
-  display_name?: string
-  company_name?: string
   role: 'admin' | 'user'
-  address?: {
-    city?: string
-    state?: string
-  } | string
 }
 
 export default function AdminUsuariosPage() {
@@ -27,8 +19,6 @@ export default function AdminUsuariosPage() {
   const [users, setUsers] = useState<User[]>([])
   const [filteredUsers, setFilteredUsers] = useState<User[]>([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterCity, setFilterCity] = useState('')
-  const [filterState, setFilterState] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -75,7 +65,7 @@ export default function AdminUsuariosPage() {
         // Busca todos os usuários da tabela users
         const { data, error: fetchError } = await supabase
           .from('users')
-          .select('id, email, role, name, full_name, display_name, company_name, address')
+          .select('id, email, role')
           .order('email', { ascending: true })
 
         if (fetchError) {
@@ -128,50 +118,19 @@ export default function AdminUsuariosPage() {
   useEffect(() => {
     let filtered = users
 
-    // Filtro por busca
+    // Filtro por busca (apenas email, já que não temos nome)
     if (searchTerm) {
       filtered = filtered.filter((u) => {
-        const name = u.name || u.full_name || u.display_name || u.company_name || ''
-        return (
-          name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          u.email.toLowerCase().includes(searchTerm.toLowerCase())
-        )
+        return u.email.toLowerCase().includes(searchTerm.toLowerCase())
       })
     }
 
-    // Filtro por cidade
-    if (filterCity) {
-      filtered = filtered.filter((u) => {
-        const address = typeof u.address === 'string' ? JSON.parse(u.address) : u.address
-        return address?.city?.toLowerCase().includes(filterCity.toLowerCase())
-      })
-    }
-
-    // Filtro por estado
-    if (filterState) {
-      filtered = filtered.filter((u) => {
-        const address = typeof u.address === 'string' ? JSON.parse(u.address) : u.address
-        return address?.state?.toLowerCase().includes(filterState.toLowerCase())
-      })
-    }
+    // Filtros de cidade e estado removidos (não temos mais campo address)
 
     setFilteredUsers(filtered)
-  }, [users, searchTerm, filterCity, filterState])
+  }, [users, searchTerm])
 
 
-  const getUserDisplayName = (user: User) => {
-    return user.name || user.full_name || user.display_name || user.company_name || '-'
-  }
-
-  const getUserAddress = (user: User) => {
-    if (!user.address) return null
-    try {
-      const address = typeof user.address === 'string' ? JSON.parse(user.address) : user.address
-      return address
-    } catch {
-      return null
-    }
-  }
 
   const getRoleBadgeColor = (role: string) => {
     if (role === 'admin') {
@@ -250,28 +209,12 @@ export default function AdminUsuariosPage() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
                 <Input
                   type="text"
-                  placeholder="Buscar por nome ou email..."
+                  placeholder="Buscar por email..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>
-            </div>
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                placeholder="Filtrar por cidade"
-                value={filterCity}
-                onChange={(e) => setFilterCity(e.target.value)}
-                className="w-40"
-              />
-              <Input
-                type="text"
-                placeholder="Filtrar por estado"
-                value={filterState}
-                onChange={(e) => setFilterState(e.target.value)}
-                className="w-40"
-              />
             </div>
           </div>
         </div>
@@ -282,16 +225,14 @@ export default function AdminUsuariosPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-white/10">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Nome</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Email</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Role</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Cidade/Estado</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="py-8 text-center text-slate-400">
+                    <td colSpan={2} className="py-8 text-center text-slate-400">
                       {users.length === 0
                         ? 'Nenhum usuário cadastrado ainda.'
                         : 'Nenhum usuário encontrado com os filtros aplicados.'}
@@ -299,7 +240,6 @@ export default function AdminUsuariosPage() {
                   </tr>
                 ) : (
                   filteredUsers.map((user, index) => {
-                    const address = getUserAddress(user)
                     return (
                       <tr
                         key={user.id}
@@ -308,17 +248,11 @@ export default function AdminUsuariosPage() {
                           index % 2 === 0 ? 'bg-white/2' : 'bg-white/5'
                         } hover:bg-white/10`}
                       >
-                        <td className="py-3 px-4 text-sm text-white">{getUserDisplayName(user)}</td>
                         <td className="py-3 px-4 text-sm text-white">{user.email}</td>
                         <td className="py-3 px-4">
                           <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium border ${getRoleBadgeColor(user.role)}`}>
                             {user.role === 'admin' ? 'Admin' : 'Usuário'}
                           </span>
-                        </td>
-                        <td className="py-3 px-4 text-sm text-slate-300">
-                          {address?.city && address?.state
-                            ? `${address.city}/${address.state}`
-                            : '-'}
                         </td>
                       </tr>
                     )
