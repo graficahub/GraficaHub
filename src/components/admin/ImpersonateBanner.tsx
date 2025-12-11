@@ -2,13 +2,26 @@
 
 import { useRouter } from 'next/navigation'
 import { AlertCircle, X } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { clearAdminBackup, getAdminBackup } from '@/utils/impersonate'
 import { setCurrentUser } from '@/utils/admin'
+import { getUserRole } from '@/lib/auth'
 
 export default function ImpersonateBanner() {
   const router = useRouter()
   const [isVisible, setIsVisible] = useState(true)
+  const [role, setRole] = useState<'admin' | 'user' | 'loading'>('loading')
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await getUserRole()
+        setRole(r || 'user')
+      } catch (e) {
+        setRole('user')
+      }
+    })()
+  }, [])
 
   const handleReturnToAdmin = () => {
     const adminBackup = getAdminBackup()
@@ -19,6 +32,13 @@ export default function ImpersonateBanner() {
     }
   }
 
+  // Enquanto carrega a role, não renderiza (evita flicker)
+  if (role === 'loading') return null
+
+  // Se não for admin, não renderiza o banner
+  if (role !== 'admin') return null
+
+  // Se o usuário fechou o banner manualmente, não renderiza
   if (!isVisible) return null
 
   return (
