@@ -81,16 +81,23 @@ export default function LoginPage() {
         return;
       }
 
+      const userId = data.user?.id;
+      if (!userId) {
+        setError('Erro inesperado ao obter usuário.');
+        setIsLoading(false);
+        return;
+      }
+
       console.log("✅ Login bem-sucedido, buscando role...");
 
-      const role = await getUserRole(data.user.id);
+      const role = await getUserRole(userId);
 
       console.log("Role após login:", role);
 
       if (role === "admin") {
-        router.replace("/admin");
+        router.push("/admin");
       } else {
-        router.replace("/setup");
+        router.push("/dashboard");
       }
     } catch (err) {
       console.error("Erro inesperado no login:", err);

@@ -87,15 +87,22 @@ export default function RegisterPage() {
         return;
       }
 
+      const userId = data.user?.id;
+      if (!userId) {
+        setError('Erro inesperado ao obter usuário.');
+        setIsLoading(false);
+        return;
+      }
+
       console.log("✅ Cadastro ok, buscando role...");
 
-      const role = await getUserRole(data.user.id);
+      const role = await getUserRole(userId);
       console.log("Role após cadastro:", role);
 
       if (role === "admin") {
-        router.replace("/admin");
+        router.push("/admin");
       } else {
-        router.replace("/setup");
+        router.push("/setup"); // usuário comum vai completar cadastro
       }
     } catch (err) {
       console.error("Erro inesperado no registro:", err);

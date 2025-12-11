@@ -4,11 +4,17 @@ import { ReactNode, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSession, getUserRole } from "@/lib/auth";
 
-type AdminLayoutProps = {
-  children: ReactNode;
-};
-
-export default function AdminLayout({ children }: AdminLayoutProps) {
+/**
+ * Layout do Painel Administrativo - GraficaHub
+ * 
+ * Client Component que protege rotas admin:
+ * - Verifica sessão do Supabase Auth
+ * - Busca role na tabela users
+ * - Se não houver sessão → redirect para /login
+ * - Se role !== 'admin' → redirect para /dashboard
+ * - Apenas admins podem acessar
+ */
+export default function AdminLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
   const [isAllowed, setIsAllowed] = useState(false);
@@ -36,8 +42,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         if (role === "admin") {
           setIsAllowed(true);
         } else {
-          // usuário comum → manda para o setup
-          router.replace("/setup");
+          // usuário comum → manda para o dashboard (não /setup)
+          router.replace("/dashboard");
         }
       } catch (err) {
         console.error("Erro ao checar permissões do admin:", err);
