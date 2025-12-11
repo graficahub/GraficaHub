@@ -89,20 +89,40 @@ export default function RegisterPage() {
 
       const userId = data.user?.id;
       if (!userId) {
+        console.error("❌ Registro: userId não encontrado após signUp");
         setError('Erro inesperado ao obter usuário.');
         setIsLoading(false);
         return;
       }
 
-      console.log("✅ Cadastro ok, buscando role...");
+      console.log("✅ Cadastro bem-sucedido no Supabase Auth");
+      console.log("🔍 UserId obtido:", userId);
+      console.log("🔍 Buscando role na tabela users...");
 
-      const role = await getUserRole(userId);
-      console.log("Role após cadastro:", role);
+      let role: "admin" | "user" = "user"; // Default para 'user'
+      
+      try {
+        role = await getUserRole(userId);
+        console.log("✅ Role obtida:", role);
+      } catch (err) {
+        console.error("⚠️ Erro ao buscar role (continuando com default 'user'):", err);
+        // Continua com role = 'user' (já definido como default)
+      }
 
-      if (role === "admin") {
-        router.push("/admin");
-      } else {
-        router.push("/setup"); // usuário comum vai completar cadastro
+      // Se role for 'admin', vai para /admin; caso contrário, vai para /setup
+      const redirectPath = role === "admin" ? "/admin" : "/setup";
+      console.log(`🚀 Redirecionando para: ${redirectPath}`);
+
+      setIsLoading(false); // Desativa loading antes de redirecionar
+      
+      try {
+        router.push(redirectPath);
+      } catch (routerError) {
+        console.error("❌ Erro ao redirecionar, usando window.location:", routerError);
+        // Fallback para window.location se router falhar
+        if (typeof window !== 'undefined') {
+          window.location.href = redirectPath;
+        }
       }
     } catch (err) {
       console.error("Erro inesperado no registro:", err);

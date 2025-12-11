@@ -31,10 +31,10 @@ export async function getCurrentUser(): Promise<User | null> {
   return data.user ?? null;
 }
 
-export async function getUserRole(userId?: string): Promise<"admin" | "user" | null> {
+export async function getUserRole(userId?: string): Promise<"admin" | "user"> {
   if (!supabase) {
     console.error("Supabase não está configurado");
-    return null;
+    return "user"; // Default para 'user' em vez de null
   }
 
   try {
@@ -43,7 +43,10 @@ export async function getUserRole(userId?: string): Promise<"admin" | "user" | n
     // Se não vier id, pega da sessão atual
     if (!id) {
       const user = await getCurrentUser();
-      if (!user) return null;
+      if (!user) {
+        console.warn("getUserRole: Usuário não encontrado na sessão, retornando 'user' como default");
+        return "user";
+      }
       id = user.id;
     }
 
@@ -54,16 +57,33 @@ export async function getUserRole(userId?: string): Promise<"admin" | "user" | n
       .single();
 
     if (error) {
+      // Se erro é "not found" (PGRST116), significa que não há linha na tabela
+      if (error.code === 'PGRST116' || error.message?.includes('No rows')) {
+        console.warn(`getUserRole: Usuário ${id} não encontrado na tabela users, retornando 'user' como default`);
+        return "user";
+      }
+      
+      // Se erro é de RLS (PGRST301), também retorna 'user' como fallback
+      if (error.code === 'PGRST301' || error.message?.includes('permission denied') || error.message?.includes('RLS')) {
+        console.warn(`getUserRole: Erro de RLS ao buscar role do usuário ${id}, retornando 'user' como default`, error);
+        return "user";
+      }
+
       console.error("Erro ao buscar role do usuário:", error);
-      return null;
+      return "user"; // Default para 'user' em caso de erro
     }
 
-    if (!data) return null;
+    if (!data) {
+      console.warn(`getUserRole: Nenhum dado retornado para usuário ${id}, retornando 'user' como default`);
+      return "user";
+    }
 
-    return (data.role as "admin" | "user") ?? null;
+    // Retorna a role encontrada ou 'user' como default
+    const role = data.role as "admin" | "user";
+    return role || "user";
   } catch (err) {
     console.error("Erro inesperado em getUserRole:", err);
-    return null;
+    return "user"; // Default para 'user' em caso de exceção
   }
 }
 
@@ -115,8 +135,18 @@ export async function signUpWithEmail(name: string, email: string, password: str
   });
 
   if (insertError) {
-    console.error("Erro ao inserir usuário na tabela users:", insertError);
-    return { data: null, error: insertError };
+    // Se erro é "duplicate key" (23505), significa que o usuário já existe (pode ter sido criado antes)
+    if (insertError.code === '23505' || insertError.message?.includes('duplicate')) {
+      console.warn("Usuário já existe na tabela users (provavelmente criado anteriormente), continuando...");
+      // Continua mesmo assim, pois o usuário já existe
+    } else {
+      console.error("Erro ao inserir usuário na tabela users:", insertError);
+      // Não bloqueia o cadastro se houver erro - o usuário pode logar mesmo sem linha na tabela users
+      // (o getUserRole retornará 'user' como default)
+      console.warn("⚠️ Continuando cadastro mesmo com erro na inserção da tabela users. O usuário poderá fazer login.");
+    }
+  } else {
+    console.log("✅ Usuário inserido na tabela users com sucesso");
   }
 
   return { data, error: null };
