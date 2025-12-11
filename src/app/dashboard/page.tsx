@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth, Printer } from '@/hooks/useAuth'
-import { isAdmin } from '@/utils/admin'
 import { motion, AnimatePresence } from 'framer-motion'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
@@ -175,12 +174,6 @@ export default function DashboardPage() {
   // Proteção de rota
   useEffect(() => {
     if (!isLoading) {
-      // Se for admin, redireciona para painel admin
-      if (isAdmin()) {
-        router.replace('/admin')
-        return
-      }
-      
       // Se não for usuário, redireciona para login
       if (!user) {
         router.replace('/auth')

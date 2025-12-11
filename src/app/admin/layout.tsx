@@ -3,6 +3,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSession, getUserRole } from "@/lib/auth";
+import AdminSidebar, { AdminSidebarToggle } from "@/components/admin/AdminSidebar";
 
 /**
  * Layout do Painel Administrativo - GraficaHub
@@ -18,6 +19,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
   const [isAllowed, setIsAllowed] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -82,6 +84,30 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     return null;
   }
 
-  // Admin autorizado → renderiza o painel normalmente
-  return <>{children}</>;
+  // Admin autorizado → renderiza o painel com sidebar e estrutura completa
+  return (
+    <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+      {/* Efeito vignette */}
+      <div 
+        className="fixed inset-0 pointer-events-none z-0"
+        style={{
+          background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.15) 100%)'
+        }}
+      />
+
+      {/* Sidebar do Admin */}
+      <AdminSidebar 
+        isMobileOpen={sidebarOpen}
+        onMobileClose={() => setSidebarOpen(false)}
+      />
+
+      {/* Botão para abrir sidebar no mobile */}
+      {!sidebarOpen && <AdminSidebarToggle onClick={() => setSidebarOpen(true)} />}
+
+      {/* Conteúdo principal */}
+      <main className="md:ml-64 min-h-screen">
+        {children}
+      </main>
+    </div>
+  );
 }
