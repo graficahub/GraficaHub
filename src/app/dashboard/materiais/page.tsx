@@ -39,8 +39,8 @@ const TECHNOLOGY_OPTIONS = [
 ]
 
 export default function MateriaisPage() {
-  const { user, isLoading, logout } = useAuth()
-  const router = useRouter()
+  const { user, logout } = useAuth()
+  // router removido - autenticação é feita pelo layout server-side
 
   const [materials, setMaterials] = useState<Material[]>([])
   const [printers, setPrinters] = useState<Printer[]>([])
@@ -106,11 +106,8 @@ export default function MateriaisPage() {
     return Array.from(new Set(catalogData.map((item) => item.categoria))).sort()
   }, [catalogData])
 
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.replace('/login')
-    }
-  }, [user, isLoading, router])
+  // Autenticação é feita pelo layout server-side
+  // Removida verificação client-side para evitar redirects indevidos
 
   useEffect(() => {
     loadMaterials()
@@ -313,18 +310,8 @@ export default function MateriaisPage() {
     return techs.length > 0 ? techs.join(', ') : 'Nenhuma'
   }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center">
-        <div className="text-center text-white">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-slate-300">Carregando...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!user) return null
+  // Autenticação é garantida pelo layout server-side
+  // Não precisa mais verificar isLoading ou !user
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
@@ -336,7 +323,7 @@ export default function MateriaisPage() {
       />
 
       <Sidebar
-        userEmail={user.email}
+        userEmail={user?.email || ''}
         isMobileOpen={sidebarOpen}
         onMobileClose={() => setSidebarOpen(false)}
       />
@@ -347,7 +334,7 @@ export default function MateriaisPage() {
         <HeaderDashboard
           title="Materiais"
           subtitle="Gerencie seus materiais"
-          userEmail={user.email}
+          userEmail={user?.email || ''}
           onLogout={logout}
         />
 

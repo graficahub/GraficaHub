@@ -22,15 +22,14 @@ export default function NotificacoesPage() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
+  // Autenticação é feita pelo layout server-side
   useEffect(() => {
-    if (!user) {
-      router.push('/login')
-      return
+    if (user) {
+      loadNotifications()
+      const interval = setInterval(loadNotifications, 5000)
+      return () => clearInterval(interval)
     }
-    loadNotifications()
-    const interval = setInterval(loadNotifications, 5000)
-    return () => clearInterval(interval)
-  }, [user, router])
+  }, [user])
 
   const loadNotifications = () => {
     if (!user) return
@@ -68,12 +67,13 @@ export default function NotificacoesPage() {
 
   const unreadCount = notifications.filter(n => !n.read).length
 
-  if (!user) return null
+  // Autenticação é garantida pelo layout server-side
+  // Não precisa mais verificar !user
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
       <Sidebar
-        userEmail={user.email}
+        userEmail={user?.email || ''}
         isMobileOpen={sidebarOpen}
         onMobileClose={() => setSidebarOpen(false)}
         hasPendingOrdersBadge={false}
@@ -84,7 +84,7 @@ export default function NotificacoesPage() {
         <HeaderDashboard
           title="Notificações"
           subtitle="Central de notificações e comunicados"
-          userEmail={user.email}
+          userEmail={user?.email || ''}
         />
 
         <div className="p-4 md:p-8">

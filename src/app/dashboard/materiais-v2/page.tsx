@@ -31,13 +31,14 @@ export default function MateriaisV2Page() {
   const [priceValue, setPriceValue] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
+  // Autenticação é feita pelo layout server-side
+  // Removida verificação client-side para evitar redirects indevidos
+  
   useEffect(() => {
-    if (!user) {
-      router.replace('/login')
-      return
+    if (user) {
+      loadMaterials()
     }
-    loadMaterials()
-  }, [user, router])
+  }, [user])
 
   const loadMaterials = () => {
     if (!user) return
@@ -97,14 +98,15 @@ export default function MateriaisV2Page() {
     return Array.from(techs)
   }
 
-  if (!user) return null
+  // Autenticação é garantida pelo layout server-side
+  // Não precisa mais verificar !user
 
   const userTechs = getUserTechnologies()
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
       <Sidebar
-        userEmail={user.email}
+        userEmail={user?.email || ''}
         isMobileOpen={sidebarOpen}
         onMobileClose={() => setSidebarOpen(false)}
         hasPendingOrdersBadge={false}
@@ -115,7 +117,7 @@ export default function MateriaisV2Page() {
         <HeaderDashboard
           title="Materiais"
           subtitle="Gerencie seus materiais e preços padrão"
-          userEmail={user.email}
+          userEmail={user?.email || ''}
         />
 
         <div className="p-4 md:p-8">
@@ -259,7 +261,7 @@ export default function MateriaisV2Page() {
             technology={userTechs[0]} // Usa a primeira tecnologia, pode melhorar depois
             onClose={() => setShowAddModal(false)}
             onConfirm={handleAddMaterials}
-            existingMaterialIds={loadUserActiveMaterials(user.email).map(m => m.materialId)}
+            existingMaterialIds={user ? loadUserActiveMaterials(user.email).map(m => m.materialId) : []}
           />
         )}
       </main>

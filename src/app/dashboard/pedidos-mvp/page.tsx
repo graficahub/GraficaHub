@@ -30,23 +30,21 @@ export default function PedidosMVPPage() {
   const [hasPendingOrdersBadge, setHasPendingOrdersBadge] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
+  // Autenticação é feita pelo layout server-side
   useEffect(() => {
-    if (!user) {
-      router.push('/login')
-      return
-    }
-
-    loadData()
-    updateBadge()
-    const interval = setInterval(() => {
+    if (user) {
       loadData()
       updateBadge()
-    }, 5000) // Atualiza a cada 5s
-    return () => clearInterval(interval)
-  }, [user, router])
+      const interval = setInterval(() => {
+        loadData()
+        updateBadge()
+      }, 5000) // Atualiza a cada 5s
+      return () => clearInterval(interval)
+    }
+  }, [user])
 
   const updateBadge = () => {
-    if (!user) return
+    if (!user?.email) return
     const tags = (user as any).tags || []
     const isPremium = (user as any).premium || false
     const count = getUnreadOrderNotificationsCount(user.email, tags, isPremium)
@@ -127,7 +125,8 @@ export default function PedidosMVPPage() {
     }
   }
 
-  if (!user) return null
+  // Autenticação é garantida pelo layout server-side
+  // Não precisa mais verificar !user
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">

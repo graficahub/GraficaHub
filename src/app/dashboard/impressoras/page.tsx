@@ -62,11 +62,8 @@ export default function ImpressorasPage() {
     averageSpeed: '',
   })
 
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.replace('/login')
-    }
-  }, [user, isLoading, router])
+  // Autenticação é feita pelo layout server-side
+  // Removida verificação client-side para evitar redirects indevidos
 
   useEffect(() => {
     loadPrinters()
@@ -179,18 +176,8 @@ export default function ImpressorasPage() {
     return colors[technology] || 'bg-slate-500/20 text-slate-400 border-slate-500/30'
   }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center">
-        <div className="text-center text-white">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-slate-300">Carregando...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!user) return null
+  // Autenticação é garantida pelo layout server-side
+  // Não precisa mais verificar isLoading ou !user
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
@@ -202,7 +189,7 @@ export default function ImpressorasPage() {
       />
 
       <Sidebar
-        userEmail={user.email}
+        userEmail={user?.email || ''}
         isMobileOpen={sidebarOpen}
         onMobileClose={() => setSidebarOpen(false)}
         hasPendingOrdersBadge={false}
@@ -214,7 +201,7 @@ export default function ImpressorasPage() {
         <HeaderDashboard
           title="Impressoras"
           subtitle="Gerencie suas impressoras"
-          userEmail={user.email}
+          userEmail={user?.email || ''}
           onLogout={logout}
         />
 

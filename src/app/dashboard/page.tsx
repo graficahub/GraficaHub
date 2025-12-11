@@ -171,16 +171,10 @@ export default function DashboardPage() {
     }
   }, [user])
 
-  // Proteção de rota
+  // Autenticação é feita pelo layout server-side
+  // Verifica apenas se precisa completar onboarding
   useEffect(() => {
-    if (!isLoading) {
-      // Se não for usuário, redireciona para login
-      if (!user) {
-        router.replace('/login')
-        return
-      }
-      
-      // Verifica se precisa completar onboarding
+    if (user) {
       const onboardingComplete = typeof window !== 'undefined' && 
         localStorage.getItem('GH_ONBOARDING_COMPLETE') === 'true'
       const needsOnboarding = !onboardingComplete && (!user.cpfCnpj || user.cpfCnpj.trim() === '')
@@ -188,7 +182,7 @@ export default function DashboardPage() {
         router.replace('/onboarding')
       }
     }
-  }, [user, isLoading, router])
+  }, [user, router])
 
   // Calcula estatísticas
   const activeOrders = orders.filter(o => o.status !== 'Cancelado')
@@ -292,23 +286,8 @@ export default function DashboardPage() {
     }
   }
 
-  // Loading
-  if (isLoading) {
-    return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
-        <main className="min-h-screen flex flex-col items-center justify-center">
-          <div className="text-center text-white">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-            <p className="text-slate-300">Carregando...</p>
-          </div>
-        </main>
-      </div>
-    )
-  }
-
-  if (!user) {
-    return null
-  }
+  // Autenticação é garantida pelo layout server-side
+  // user pode ser null temporariamente enquanto carrega do localStorage, mas isso não deve bloquear renderização
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
@@ -322,7 +301,7 @@ export default function DashboardPage() {
 
       {/* Sidebar */}
       <Sidebar 
-        userEmail={user.email} 
+        userEmail={user?.email || ''} 
         isMobileOpen={sidebarOpen}
         onMobileClose={() => setSidebarOpen(false)}
       />
@@ -340,8 +319,8 @@ export default function DashboardPage() {
         {/* Header */}
         <HeaderDashboard
           title="Dashboard"
-          subtitle={`Bem-vindo de volta, ${user.email}`}
-          userEmail={user.email}
+          subtitle={user?.email ? `Bem-vindo de volta, ${user.email}` : 'Dashboard'}
+          userEmail={user?.email || ''}
           onLogout={handleLogout}
         />
 
