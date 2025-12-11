@@ -118,7 +118,11 @@ function setAuthCookies(session: any) {
       ? new Date(session.expires_at * 1000)
       : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
     
-    document.cookie = `${authCookieName}=${encodeURIComponent(JSON.stringify(sessionData))}; expires=${expires.toUTCString()}; path=/; SameSite=Lax; Secure`;
+    // Remove flag Secure para funcionar em desenvolvimento local (HTTP)
+    const isSecure = window.location.protocol === 'https:';
+    const secureFlag = isSecure ? '; Secure' : '';
+    
+    document.cookie = `${authCookieName}=${encodeURIComponent(JSON.stringify(sessionData))}; expires=${expires.toUTCString()}; path=/; SameSite=Lax${secureFlag}`;
     
     console.log('✅ Cookies de autenticação setados:', authCookieName);
   } catch (err) {
