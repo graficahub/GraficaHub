@@ -16,7 +16,6 @@ interface User {
   display_name?: string
   company_name?: string
   role: 'admin' | 'user'
-  created_at?: string
   address?: {
     city?: string
     state?: string
@@ -76,11 +75,17 @@ export default function AdminUsuariosPage() {
         // Busca todos os usuários da tabela users
         const { data, error: fetchError } = await supabase
           .from('users')
-          .select('id, email, role, name, full_name, display_name, company_name, created_at, address')
-          .order('created_at', { ascending: false })
+          .select('id, email, role, name, full_name, display_name, company_name, address')
+          .order('email', { ascending: true })
 
         if (fetchError) {
-          console.error('❌ Erro ao buscar usuários:', fetchError)
+          console.error('❌ Erro ao buscar usuários no Supabase:', fetchError)
+          console.error('Detalhes do erro:', {
+            code: fetchError.code,
+            message: fetchError.message,
+            details: fetchError.details,
+            hint: fetchError.hint,
+          })
           
           // Trata erros de RLS/permissão
           if (fetchError.code === 'PGRST301' || fetchError.message?.includes('permission denied') || fetchError.message?.includes('RLS')) {
@@ -153,18 +158,6 @@ export default function AdminUsuariosPage() {
     setFilteredUsers(filtered)
   }, [users, searchTerm, filterCity, filterState])
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return '-'
-    try {
-      return new Date(dateString).toLocaleDateString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      })
-    } catch {
-      return '-'
-    }
-  }
 
   const getUserDisplayName = (user: User) => {
     return user.name || user.full_name || user.display_name || user.company_name || '-'
@@ -293,13 +286,12 @@ export default function AdminUsuariosPage() {
                   <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Email</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Role</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Cidade/Estado</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Data de Cadastro</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-400">
+                    <td colSpan={4} className="py-8 text-center text-slate-400">
                       {users.length === 0
                         ? 'Nenhum usuário cadastrado ainda.'
                         : 'Nenhum usuário encontrado com os filtros aplicados.'}
@@ -328,7 +320,6 @@ export default function AdminUsuariosPage() {
                             ? `${address.city}/${address.state}`
                             : '-'}
                         </td>
-                        <td className="py-3 px-4 text-sm text-slate-300">{formatDate(user.created_at)}</td>
                       </tr>
                     )
                   })
