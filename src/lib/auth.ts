@@ -87,49 +87,6 @@ export async function getUserRole(userId?: string): Promise<"admin" | "user"> {
   }
 }
 
-/**
- * Helper para setar cookies após login
- * Garante que os cookies sejam setados para que Server Components possam ler
- */
-function setAuthCookies(session: any) {
-  if (typeof window === 'undefined' || !session) return;
-
-  try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    if (!supabaseUrl) return;
-
-    // Extrai o project ref da URL
-    const match = supabaseUrl.match(/https?:\/\/([^.]+)\.supabase\.co/);
-    const projectRef = match ? match[1] : 'default';
-    const authCookieName = `sb-${projectRef}-auth-token`;
-
-    // Cria o objeto de sessão para salvar no cookie
-    const sessionData = {
-      access_token: session.access_token,
-      refresh_token: session.refresh_token,
-      expires_at: session.expires_at,
-      expires_in: session.expires_in,
-      token_type: session.token_type,
-      user: session.user,
-    };
-
-    // Salva no cookie (expira em 1 ano ou quando a sessão expirar)
-    const expires = session.expires_at 
-      ? new Date(session.expires_at * 1000)
-      : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
-    
-    // Remove flag Secure para funcionar em desenvolvimento local (HTTP)
-    const isSecure = window.location.protocol === 'https:';
-    const secureFlag = isSecure ? '; Secure' : '';
-    
-    document.cookie = `${authCookieName}=${encodeURIComponent(JSON.stringify(sessionData))}; expires=${expires.toUTCString()}; path=/; SameSite=Lax${secureFlag}`;
-    
-    console.log('✅ Cookies de autenticação setados:', authCookieName);
-  } catch (err) {
-    console.error('❌ Erro ao setar cookies de autenticação:', err);
-  }
-}
-
 export async function signInWithEmail(email: string, password: string) {
   if (!supabase) {
     return {
@@ -142,11 +99,6 @@ export async function signInWithEmail(email: string, password: string) {
     email,
     password,
   });
-
-  // Se login foi bem-sucedido, seta os cookies manualmente
-  if (data?.session && !error) {
-    setAuthCookies(data.session);
-  }
 
   return { data, error };
 }

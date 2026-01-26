@@ -18,58 +18,18 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('❌ DashboardLayout: Supabase não está configurado');
+    console.error('Supabase não está configurado');
     redirect('/login');
   }
 
-  // Extrai o project ref da URL para construir o nome do cookie
-  const getProjectRef = (url: string): string => {
-    try {
-      const match = url.match(/https?:\/\/([^.]+)\.supabase\.co/);
-      return match ? match[1] : 'default';
-    } catch {
-      return 'default';
-    }
-  };
-
-  const projectRef = getProjectRef(supabaseUrl);
-
-  // Cria cliente Supabase para server-side com configuração de cookies
-  // O Supabase usa cookies com nomes específicos baseados no project ref
+  // Cria cliente Supabase para server-side
+  // O Supabase JS SDK v2+ suporta cookies automaticamente quando usado em Server Components
   const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       storage: {
         getItem: (key: string) => {
-          // Tenta ler o cookie com o nome exato
-          let cookie = cookieStore.get(key);
-          if (cookie?.value) {
-            return cookie.value;
-          }
-          
-          // Tenta ler cookies do Supabase com diferentes formatos
-          const possibleKeys = [
-            key,
-            `sb-${projectRef}-auth-token`,
-            `sb-${projectRef}-auth-token-code-verifier`,
-          ];
-          
-          for (const cookieKey of possibleKeys) {
-            cookie = cookieStore.get(cookieKey);
-            if (cookie?.value) {
-              // Se for JSON, tenta fazer parse
-              try {
-                const parsed = JSON.parse(cookie.value);
-                if (parsed && typeof parsed === 'object' && parsed.access_token) {
-                  return parsed.access_token;
-                }
-              } catch {
-                // Se não for JSON, retorna o valor direto
-              }
-              return cookie.value;
-            }
-          }
-          
-          return null;
+          const cookie = cookieStore.get(key);
+          return cookie?.value ?? null;
         },
         setItem: () => {
           // Não faz nada em server component
@@ -81,25 +41,13 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     },
   });
 
-  // Tenta obter sessão primeiro (pode funcionar melhor com cookies)
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-  
-  // Se não houver sessão, tenta obter usuário diretamente
-  if (!session) {
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
 
-    // Se não houver usuário ou erro, redireciona para login
-    if (userError || !user) {
-      if (userError) {
-        console.error('❌ DashboardLayout: Erro ao buscar usuário:', userError.message);
-      }
-      redirect('/login');
-    }
-  } else if (sessionError) {
-    console.error('❌ DashboardLayout: Erro ao buscar sessão:', sessionError.message);
+  // Se não houver usuário ou erro, redireciona para login
+  if (error || !user) {
     redirect('/login');
   }
 

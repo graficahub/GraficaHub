@@ -109,15 +109,14 @@ export default function LoginPage() {
 
       setIsLoading(false); // Desativa loading antes de redirecionar
       
-      // IMPORTANTE: Usa window.location.href para forçar um reload completo da página
-      // Isso garante que os cookies do Supabase sejam lidos corretamente pelo Server Component
-      // O router.push não recarrega a página, então os cookies podem não ser lidos imediatamente
-      if (typeof window !== 'undefined') {
-        console.log('🔄 Forçando reload completo da página para garantir que cookies sejam lidos...');
-        window.location.href = redirectPath;
-      } else {
-        // Fallback para router se não estiver no cliente (não deveria acontecer)
+      try {
         router.push(redirectPath);
+      } catch (routerError) {
+        console.error("❌ Erro ao redirecionar, usando window.location:", routerError);
+        // Fallback para window.location se router falhar
+        if (typeof window !== 'undefined') {
+          window.location.href = redirectPath;
+        }
       }
     } catch (err) {
       console.error("❌ Erro inesperado no login:", err);
