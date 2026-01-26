@@ -91,11 +91,9 @@ export default function PedidoDetalhesPage() {
 
   return (
     <div className="min-h-screen w-full bg-gray-50">
-      <div
-
       <main className="relative z-10 min-h-screen">
         {/* Header */}
-        <header className="border-b border-white/10 bg-white/5 backdrop-blur-sm">
+        <header className="border-b border-gray-200 bg-white">
           <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
             <div className="flex items-center gap-4 mb-4">
               <Button variant="outline" onClick={() => router.push('/dashboard')}>
@@ -104,7 +102,7 @@ export default function PedidoDetalhesPage() {
               </Button>
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-white">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
                 Pedido #{pedidoId}
               </h1>
               <p className="text-slate-400 mt-1">

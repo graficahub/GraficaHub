@@ -240,21 +240,16 @@ export default function SetupPage() {
   return (
     <div className="min-h-screen w-full bg-gray-50">
       <main className="min-h-screen flex flex-col items-center justify-center p-4 md:p-6 relative overflow-hidden">
-        {/* Efeito vignette */}
-        <div 
-          className="absolute inset-0 pointer-events-none z-0"
-          style={{
-
         {/* Container principal */}
         <div className="relative z-10 w-full max-w-2xl">
           <Card className="w-full">
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* Cabeçalho */}
               <div className="text-center mb-6">
-                <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
                   Complete o cadastro da sua gráfica
                 </h1>
-                <p className="text-sm md:text-base text-slate-400">
+                <p className="text-sm md:text-base text-gray-600">
                   Precisamos de algumas informações para conectar você aos pedidos certos.
                 </p>
               </div>
