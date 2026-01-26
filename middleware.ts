@@ -36,5 +36,6 @@ export const config = {
     '/pedidos/:path*',
     '/setup',
     '/settings',
+    '/perfil/:path*',
   ],
 }
