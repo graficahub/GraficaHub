@@ -15,7 +15,7 @@ import Sidebar, { SidebarToggle } from '@/components/Sidebar'
 import HeaderDashboard from '@/components/HeaderDashboard'
 
 export default function CriarPedidoPage() {
-  const { user } = useAuth()
+  const { user, isLoading } = useAuth()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [materials, setMaterials] = useState<any[]>([])
@@ -26,20 +26,20 @@ export default function CriarPedidoPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (!user) {
+    if (!isLoading && !user) {
       router.push('/login')
       return
     }
 
     // Verifica se tem impressoras cadastradas
-    if (!user.printers || user.printers.length === 0) {
+    if (user && (!user.printers || user.printers.length === 0)) {
       setError('Você precisa cadastrar pelo menos uma impressora antes de criar pedidos.')
     }
 
     // Carrega catálogo de materiais
     const catalog = loadMaterialCatalog()
     setMaterials(catalog)
-  }, [user, router])
+  }, [user, isLoading, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
