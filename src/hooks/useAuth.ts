@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import type { User } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabaseClient'
+import { signInWithEmail, signUpWithEmail } from '@/lib/auth'
 import {
   isAdminEmail,
   validateAdminPassword,
@@ -14,12 +17,9 @@ import { logEvent } from '@/utils/logService'
 import { generateGraficaId } from '@/utils/proposalPrivacy'
 
 /**
- * Hook de autenticação local com localStorage
- * 
- * Implementação FAKE para testes de fluxo das telas.
- * Armazena usuários e sessão atual no localStorage.
- * 
- * TODO: Substituir por integração real com Supabase no futuro
+ * Hook de autenticação com Supabase + cache local opcional.
+ * O estado de autenticação vem do Supabase (sessão/cookies).
+ * O localStorage é usado apenas como cache de perfil.
  */
 
 export type Printer = {
@@ -74,47 +74,102 @@ export function useAuth() {
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  // Carrega usuário atual do localStorage na inicialização
-  useEffect(() => {
-    loadCurrentUser()
-  }, [])
+  const normalizeUser = (userData: LocalUser): LocalUser => ({
+    ...userData,
+    cpfCnpj: userData.cpfCnpj ?? null,
+    printers: userData.printers ?? [],
+    displayName: userData.displayName ?? userData.companyName,
+    phone: userData.phone ?? null,
+    address: userData.address ?? null,
+    logoUrl: userData.logoUrl ?? null,
+  })
 
-  const loadCurrentUser = () => {
-    // Verifica se está no cliente (browser)
-    if (typeof window === 'undefined') {
-      setIsLoading(false)
-      return
-    }
-
+  const getCachedUser = (email?: string): LocalUser | null => {
+    if (typeof window === 'undefined') return null
     try {
       const storedUser = localStorage.getItem(STORAGE_CURRENT_USER_KEY)
-      console.log('🔍 Verificando localStorage:', { hasStoredUser: !!storedUser })
-      if (storedUser) {
-        const userData: LocalUser = JSON.parse(storedUser)
-        // Garante que campos opcionais existam (compatibilidade com dados antigos)
-        const normalizedUser: LocalUser = {
-          ...userData,
-          cpfCnpj: userData.cpfCnpj ?? null,
-          printers: userData.printers ?? [],
-          displayName: userData.displayName ?? userData.companyName,
-          phone: userData.phone ?? null,
-          address: userData.address ?? null,
-          logoUrl: userData.logoUrl ?? null
-        }
-        setUser(normalizedUser)
-        console.log('✅ Usuário carregado do localStorage:', normalizedUser.email)
-      } else {
-        console.log('ℹ️ Nenhum usuário encontrado no localStorage')
-        setUser(null)
-      }
+      if (!storedUser) return null
+      const userData: LocalUser = JSON.parse(storedUser)
+      const normalized = normalizeUser(userData)
+      if (email && normalized.email !== email) return null
+      return normalized
     } catch (err) {
-      console.error('❌ Erro ao carregar usuário:', err)
-      setUser(null)
-    } finally {
-      setIsLoading(false)
-      console.log('✅ Hook useAuth inicializado, isLoading:', false)
+      console.error('❌ Erro ao carregar usuário do cache:', err)
+      return null
     }
   }
+
+  const buildUserFromSession = (sessionUser: User | null): LocalUser | null => {
+    if (!sessionUser) return null
+    const cachedUser = getCachedUser(sessionUser.email ?? undefined)
+    const email = sessionUser.email ?? cachedUser?.email ?? ''
+    const companyName =
+      cachedUser?.companyName ||
+      (sessionUser.user_metadata?.companyName as string | undefined) ||
+      email ||
+      'Usuário'
+
+    return normalizeUser({
+      companyName,
+      email,
+      cpfCnpj: cachedUser?.cpfCnpj ?? null,
+      printers: cachedUser?.printers ?? [],
+      displayName: cachedUser?.displayName ?? companyName,
+      phone: cachedUser?.phone ?? null,
+      address: cachedUser?.address ?? null,
+      logoUrl: cachedUser?.logoUrl ?? null,
+      graficaId: cachedUser?.graficaId,
+    })
+  }
+
+  // Inicializa sessão via Supabase e assina mudanças de autenticação
+  useEffect(() => {
+    let isMounted = true
+
+    const initSession = async () => {
+      if (!supabase) {
+        console.error('Supabase não está configurado')
+        if (isMounted) {
+          setUser(null)
+          setIsLoading(false)
+        }
+        return
+      }
+
+      try {
+        const { data, error } = await supabase.auth.getSession()
+        if (error) {
+          console.error('❌ Erro ao obter sessão:', error)
+        }
+        if (isMounted) {
+          const sessionUser = data.session?.user ?? null
+          setUser(buildUserFromSession(sessionUser))
+          setIsLoading(false)
+        }
+      } catch (err) {
+        console.error('❌ Erro inesperado ao obter sessão:', err)
+        if (isMounted) {
+          setUser(null)
+          setIsLoading(false)
+        }
+      }
+    }
+
+    initSession()
+
+    if (!supabase) return () => {}
+
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isMounted) return
+      setUser(buildUserFromSession(session?.user ?? null))
+      setIsLoading(false)
+    })
+
+    return () => {
+      isMounted = false
+      data.subscription.unsubscribe()
+    }
+  }, [])
 
   const getStoredUsers = (): StoredUser[] => {
     if (typeof window === 'undefined') return []
@@ -145,6 +200,25 @@ export function useAuth() {
     console.log('🔐 Tentando fazer login com email:', email)
 
     try {
+      if (supabase) {
+        const { data, error: signInError } = await signInWithEmail(email, password)
+
+        if (signInError || !data?.user) {
+          console.error('❌ Erro Supabase login:', signInError)
+          setError(signInError.message || 'Erro ao fazer login. Tente novamente.')
+          setIsLoading(false)
+          throw signInError || new Error('Usuário não retornado pelo Supabase')
+        }
+
+        const cachedUser = getCachedUser(email)
+        const needsOnboarding = !cachedUser?.cpfCnpj || cachedUser.cpfCnpj.trim() === ''
+        const redirectPath = needsOnboarding ? '/setup' : '/dashboard'
+
+        setIsLoading(false)
+        router.replace(redirectPath)
+        return
+      }
+
       // Simula delay de rede
       await new Promise(resolve => setTimeout(resolve, 500))
 
@@ -322,6 +396,36 @@ export function useAuth() {
     console.log('📝 Tentando criar conta:', { email, companyName })
 
     try {
+      if (supabase) {
+        const { data, error: signUpError } = await signUpWithEmail(companyName, email, password)
+
+        if (signUpError || !data?.user) {
+          console.error('❌ Erro Supabase registro:', signUpError)
+          setError(signUpError?.message || 'Erro ao criar conta. Tente novamente.')
+          setIsLoading(false)
+          throw signUpError || new Error('Erro ao criar conta.')
+        }
+
+        const userData: LocalUser = {
+          companyName,
+          email,
+          cpfCnpj: null,
+          printers: [],
+          displayName: companyName,
+          phone: null,
+          address: null,
+          logoUrl: null,
+        }
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(STORAGE_CURRENT_USER_KEY, JSON.stringify(userData))
+        }
+
+        setIsLoading(false)
+        router.replace('/setup')
+        return
+      }
+
       // Simula delay de rede
       await new Promise(resolve => setTimeout(resolve, 500))
 
@@ -417,6 +521,13 @@ export function useAuth() {
     console.log('🚪 Fazendo logout...')
 
     try {
+      if (supabase) {
+        const { error: signOutError } = await supabase.auth.signOut()
+        if (signOutError) {
+          console.error('❌ Erro ao fazer logout:', signOutError)
+        }
+      }
+
       // Simula delay de rede
       await new Promise(resolve => setTimeout(resolve, 300))
 
