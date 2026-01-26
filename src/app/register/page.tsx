@@ -23,6 +23,8 @@ import Button from '@/components/ui/Button'
 import { signUpWithEmail, getUserRole } from "@/lib/auth";
 import { supabase } from '@/lib/supabaseClient'
 import { isProfileComplete } from '@/lib/utils/profile'
+import { maskCpfCnpj, maskPhone, maskCEP } from '@/lib/utils/masks'
+import { validateCpfCnpj, validatePhone, validateCep, validateAddress, removeMask } from '@/lib/utils/validation'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -30,6 +32,8 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('')
   const [cpfCnpj, setCpfCnpj] = useState('')
   const [phone, setPhone] = useState('')
+  const [address, setAddress] = useState('')
+  const [cep, setCep] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -48,12 +52,28 @@ export default function RegisterPage() {
       newErrors.email = 'Email inválido'
     }
 
-    if (!cpfCnpj.trim()) {
-      newErrors.cpfCnpj = 'CPF/CNPJ é obrigatório'
+    // Valida CPF/CNPJ
+    const cpfCnpjValidation = validateCpfCnpj(cpfCnpj)
+    if (!cpfCnpjValidation.isValid) {
+      newErrors.cpfCnpj = cpfCnpjValidation.error || 'CPF/CNPJ inválido'
     }
 
-    if (!phone.trim()) {
-      newErrors.phone = 'Celular é obrigatório'
+    // Valida telefone
+    const phoneValidation = validatePhone(phone)
+    if (!phoneValidation.isValid) {
+      newErrors.phone = phoneValidation.error || 'Telefone inválido'
+    }
+
+    // Valida endereço
+    const addressValidation = validateAddress(address)
+    if (!addressValidation.isValid) {
+      newErrors.address = addressValidation.error || 'Endereço inválido'
+    }
+
+    // Valida CEP
+    const cepValidation = validateCep(cep)
+    if (!cepValidation.isValid) {
+      newErrors.cep = cepValidation.error || 'CEP inválido'
     }
 
     if (!password.trim()) {
@@ -79,7 +99,20 @@ export default function RegisterPage() {
     try {
       console.log("Enviando formulário de REGISTRO", { email, name });
 
-      const { data, error } = await signUpWithEmail(name, email, password, cpfCnpj, phone);
+      // Remove máscaras antes de salvar
+      const cpfCnpjCleaned = removeMask(cpfCnpj)
+      const phoneCleaned = removeMask(phone)
+      const cepCleaned = removeMask(cep)
+
+      const { data, error } = await signUpWithEmail(
+        name.trim(),
+        email.trim(),
+        password,
+        cpfCnpjCleaned,
+        phoneCleaned,
+        address.trim(),
+        cepCleaned
+      );
 
       if (error || !data?.user) {
         console.error("Erro Supabase registro", error);
@@ -132,8 +165,12 @@ export default function RegisterPage() {
         needsProfileCompletion = !isProfileComplete(profile)
       }
 
-      // Se role for 'admin', vai para /admin; caso contrário, vai para /perfil/completar se faltar dados
-      const redirectPath = role === "admin" ? "/admin" : (needsProfileCompletion ? "/perfil/completar" : "/dashboard");
+      // Se role for 'admin', vai para /admin
+      // Se perfil completo, vai para /dashboard
+      // Se perfil incompleto, vai para /perfil/completar (caso raro, pois acabamos de salvar todos os dados)
+      const redirectPath = role === "admin" 
+        ? "/admin" 
+        : (needsProfileCompletion ? "/perfil/completar" : "/dashboard");
       console.log(`🚀 Redirecionando para: ${redirectPath}`);
 
       setIsLoading(false); // Desativa loading antes de redirecionar
@@ -161,9 +198,16 @@ export default function RegisterPage() {
     } else if (field === 'email') {
       setEmail(value)
     } else if (field === 'cpfCnpj') {
-      setCpfCnpj(value)
+      const masked = maskCpfCnpj(value)
+      setCpfCnpj(masked)
     } else if (field === 'phone') {
-      setPhone(value)
+      const masked = maskPhone(value)
+      setPhone(masked)
+    } else if (field === 'address') {
+      setAddress(value)
+    } else if (field === 'cep') {
+      const masked = maskCEP(value)
+      setCep(masked)
     } else if (field === 'password') {
       setPassword(value)
     }
@@ -210,9 +254,9 @@ export default function RegisterPage() {
               )}
 
               <Input
-                label="Nome completo"
+                label="Nome"
                 type="text"
-                placeholder="Seu nome completo"
+                placeholder="Seu nome ou nome da empresa"
                 value={name}
                 onChange={(e) => handleChange('name', e.target.value)}
                 error={errors.name}
@@ -236,7 +280,7 @@ export default function RegisterPage() {
               <Input
                 label="CPF/CNPJ"
                 type="text"
-                placeholder="Digite o CPF ou CNPJ"
+                placeholder="000.000.000-00 ou 00.000.000/0000-00"
                 value={cpfCnpj}
                 onChange={(e) => handleChange('cpfCnpj', e.target.value)}
                 error={errors.cpfCnpj}
@@ -245,12 +289,34 @@ export default function RegisterPage() {
               />
 
               <Input
-                label="Celular"
+                label="Telefone"
                 type="tel"
-                placeholder="Digite o celular"
+                placeholder="(00) 00000-0000"
                 value={phone}
                 onChange={(e) => handleChange('phone', e.target.value)}
                 error={errors.phone}
+                required
+                disabled={isLoading}
+              />
+
+              <Input
+                label="Endereço"
+                type="text"
+                placeholder="Rua, número, complemento"
+                value={address}
+                onChange={(e) => handleChange('address', e.target.value)}
+                error={errors.address}
+                required
+                disabled={isLoading}
+              />
+
+              <Input
+                label="CEP"
+                type="text"
+                placeholder="00000-000"
+                value={cep}
+                onChange={(e) => handleChange('cep', e.target.value)}
+                error={errors.cep}
                 required
                 disabled={isLoading}
               />

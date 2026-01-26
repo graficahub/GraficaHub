@@ -108,7 +108,9 @@ export async function signUpWithEmail(
   email: string,
   password: string,
   cpfCnpj?: string,
-  phone?: string
+  phone?: string,
+  address?: string,
+  cep?: string
 ) {
   if (!supabase) {
     return {
@@ -132,13 +134,15 @@ export async function signUpWithEmail(
     return { data: null, error: new Error("Usuário não retornado pelo Supabase") as any };
   }
 
-  // Atualiza (ou cria) registro na tabela users com dados mínimos obrigatórios
+  // Atualiza (ou cria) registro na tabela users com dados básicos obrigatórios
   const { error: upsertError } = await supabase.from("users").upsert({
     id: user.id,
     email,
     name,
     cpf_cnpj: cpfCnpj ?? null,
     phone: phone ?? null,
+    address: address ?? null,
+    cep: cep ?? null,
     role: "user",
     receive_orders_enabled: false,
     dismiss_receive_orders_banner: false,

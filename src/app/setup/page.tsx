@@ -36,8 +36,6 @@ export default function SetupPage() {
   const router = useRouter()
 
   // Estado do formulário
-  const [cpfCnpj, setCpfCnpj] = useState('')
-  const [phone, setPhone] = useState('')
   const [printers, setPrinters] = useState<Printer[]>([
     {
       id: Date.now().toString(),
@@ -49,8 +47,6 @@ export default function SetupPage() {
 
   // Estado de validação e erros
   const [errors, setErrors] = useState<{
-    cpfCnpj?: string
-    phone?: string
     printers?: string
   }>({})
   const [isSaving, setIsSaving] = useState(false)
@@ -62,10 +58,7 @@ export default function SetupPage() {
       console.log('🚫 Usuário não autenticado, redirecionando para /login')
       router.replace('/login')
     } else if (!authLoading && user) {
-      // Preenche os campos se já tiver dados parciais (apenas na primeira vez)
-      // Evita resetar o estado se o usuário já começou a preencher
-      setCpfCnpj(prev => prev || user.cpfCnpj || '')
-      setPhone(prev => prev || user.phone || '')
+      // Preenche impressoras se já tiver dados
       if (user.printers && user.printers.length > 0) {
         setPrinters(user.printers)
       }
@@ -114,18 +107,9 @@ export default function SetupPage() {
     }
   }
 
-  // Validação do formulário
+  // Validação do formulário (apenas para impressoras, que são opcionais)
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {}
-
-    // Valida CPF/CNPJ e celular (dados mínimos)
-    if (!cpfCnpj.trim()) {
-      newErrors.cpfCnpj = 'CPF/CNPJ é obrigatório'
-    }
-
-    if (!phone.trim()) {
-      newErrors.phone = 'Celular é obrigatório'
-    }
 
     // Impressoras são opcionais, mas se houver preenchimento parcial, valida
     const partialPrinters = printers.filter(p =>
@@ -140,15 +124,15 @@ export default function SetupPage() {
     return Object.keys(newErrors).length === 0
   }
 
-  // Salva os dados
+  // Salva os dados (impressoras)
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setSaveError(null)
 
-    console.log('📤 Submetendo formulário de onboarding')
-    console.log('📋 Estado atual:', { cpfCnpj, printersCount: printers.length, printers })
+    console.log('📤 Submetendo formulário de impressoras')
+    console.log('📋 Estado atual:', { printersCount: printers.length, printers })
 
-    // Valida o formulário antes de prosseguir
+    // Valida o formulário antes de prosseguir (apenas se houver impressoras preenchidas)
     const isValid = validateForm()
     if (!isValid) {
       console.log('❌ Validação falhou', errors)
@@ -158,7 +142,7 @@ export default function SetupPage() {
     setIsSaving(true)
 
     try {
-      // Prepara os dados atualizados
+      // Prepara os dados atualizados (apenas impressoras completas)
       const updatedPrinters = printers.filter(p =>
         p.width && p.inkTechnology
       )
@@ -171,22 +155,18 @@ export default function SetupPage() {
         hasMaterials
 
       console.log('💾 Salvando dados:', {
-        cpfCnpj,
-        phone,
         printersCount: updatedPrinters.length,
         hasMaterials,
         shouldEnableReceiveOrders,
       })
 
-      // Atualiza o usuário
+      // Atualiza o usuário (apenas impressoras)
       await updateUser({
-        cpfCnpj: cpfCnpj.trim(),
-        phone: phone.trim(),
         printers: updatedPrinters,
         receiveOrdersEnabled: shouldEnableReceiveOrders || user?.receiveOrdersEnabled,
       })
 
-      console.log('✅ Onboarding salvo com sucesso! Redirecionando para /dashboard')
+      console.log('✅ Impressoras salvas com sucesso! Redirecionando para /dashboard')
 
       // Aguarda um pouco antes de redirecionar para garantir que o estado seja atualizado
       await new Promise(resolve => setTimeout(resolve, 300))
@@ -210,8 +190,50 @@ export default function SetupPage() {
         }
       }
     } catch (error) {
-      console.error('❌ Erro ao salvar onboarding:', error)
+      console.error('❌ Erro ao salvar impressoras:', error)
       setSaveError('Erro ao salvar dados. Tente novamente.')
+      setIsSaving(false)
+    }
+  }
+
+  // Função para pular a etapa de impressoras
+  const handleSkip = async () => {
+    setSaveError(null)
+    setIsSaving(true)
+
+    try {
+      console.log('⏭️ Pulando etapa de impressoras')
+
+      // Atualiza o usuário para marcar que o banner foi dispensado
+      await updateUser({
+        dismissReceiveOrdersBanner: true,
+        receiveOrdersEnabled: false,
+      })
+
+      console.log('✅ Configuração salva! Redirecionando para /dashboard')
+
+      // Aguarda um pouco antes de redirecionar
+      await new Promise(resolve => setTimeout(resolve, 300))
+
+      setIsSaving(false)
+
+      // Redireciona para dashboard
+      try {
+        router.replace('/dashboard')
+        setTimeout(() => {
+          if (typeof window !== 'undefined' && window.location.pathname !== '/dashboard') {
+            window.location.href = '/dashboard'
+          }
+        }, 1000)
+      } catch (routerError) {
+        console.error('❌ Erro no router, usando window.location:', routerError)
+        if (typeof window !== 'undefined') {
+          window.location.href = '/dashboard'
+        }
+      }
+    } catch (error) {
+      console.error('❌ Erro ao pular etapa:', error)
+      setSaveError('Erro ao salvar configuração. Tente novamente.')
       setIsSaving(false)
     }
   }
@@ -245,10 +267,10 @@ export default function SetupPage() {
               {/* Cabeçalho */}
               <div className="text-center mb-6">
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-                  Complete o cadastro da sua gráfica
+                  Configure suas impressoras
                 </h1>
                 <p className="text-sm md:text-base text-gray-600">
-                  Precisamos de algumas informações para conectar você aos pedidos certos.
+                  Adicione suas impressoras para começar a receber pedidos. Você pode pular esta etapa e configurar depois.
                 </p>
               </div>
 
@@ -259,42 +281,7 @@ export default function SetupPage() {
                 </div>
               )}
 
-              {/* Sessão 1: Dados da empresa */}
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold text-white border-b border-white/10 pb-2">
-                  Dados da empresa
-                </h2>
-                <Input
-                  label="CPF/CNPJ"
-                  type="text"
-                  placeholder="Digite o CPF ou CNPJ da empresa"
-                  value={cpfCnpj}
-                  onChange={(e) => {
-                    setCpfCnpj(e.target.value)
-                    if (errors.cpfCnpj) {
-                      setErrors(prev => ({ ...prev, cpfCnpj: undefined }))
-                    }
-                  }}
-                  error={errors.cpfCnpj}
-                  required
-                />
-                <Input
-                  label="Celular"
-                  type="tel"
-                  placeholder="Digite o celular"
-                  value={phone}
-                  onChange={(e) => {
-                    setPhone(e.target.value)
-                    if (errors.phone) {
-                      setErrors(prev => ({ ...prev, phone: undefined }))
-                    }
-                  }}
-                  error={errors.phone}
-                  required
-                />
-              </div>
-
-              {/* Sessão 2: Equipamentos */}
+              {/* Sessão: Equipamentos */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-white/10 pb-2">
                   <h2 className="text-lg font-semibold text-white">
@@ -302,7 +289,7 @@ export default function SetupPage() {
                   </h2>
                 </div>
                 <p className="text-sm text-slate-400">
-                  Você pode completar impressoras e materiais depois no dashboard.
+                  Adicione suas impressoras para começar a receber pedidos. Esta etapa é opcional - você pode pular e configurar depois.
                 </p>
 
                 {/* Lista de impressoras */}
@@ -394,8 +381,8 @@ export default function SetupPage() {
                 </Button>
               </div>
 
-              {/* Botão salvar */}
-              <div className="pt-4">
+              {/* Botões de ação */}
+              <div className="pt-4 space-y-3">
                 <Button
                   type="submit"
                   variant="primary"
@@ -405,6 +392,19 @@ export default function SetupPage() {
                 >
                   {isSaving ? 'Salvando...' : 'Salvar e continuar'}
                 </Button>
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  fullWidth
+                  onClick={handleSkip}
+                  disabled={isSaving}
+                >
+                  Pular por enquanto
+                </Button>
+                <p className="text-xs text-center text-gray-500">
+                  Você pode configurar impressoras depois no dashboard
+                </p>
               </div>
             </form>
           </Card>
