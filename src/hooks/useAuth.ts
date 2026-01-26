@@ -48,6 +48,8 @@ export interface LocalUser {
   phone: string | null
   address: Address | null
   logoUrl: string | null
+  receiveOrdersEnabled?: boolean
+  dismissReceiveOrdersBanner?: boolean
   graficaId?: string // Identificador único da gráfica
 }
 
@@ -61,6 +63,8 @@ interface StoredUser {
   phone: string | null
   address: Address | null
   logoUrl: string | null
+  receiveOrdersEnabled?: boolean
+  dismissReceiveOrdersBanner?: boolean
   graficaId?: string // Identificador único da gráfica
   status?: 'ativo' | 'suspenso' // Status da conta
 }
@@ -82,6 +86,8 @@ export function useAuth() {
     phone: userData.phone ?? null,
     address: userData.address ?? null,
     logoUrl: userData.logoUrl ?? null,
+    receiveOrdersEnabled: userData.receiveOrdersEnabled ?? false,
+    dismissReceiveOrdersBanner: userData.dismissReceiveOrdersBanner ?? false,
   })
 
   const getCachedUser = (email?: string): LocalUser | null => {
@@ -99,11 +105,42 @@ export function useAuth() {
     }
   }
 
-  const buildUserFromSession = (sessionUser: User | null): LocalUser | null => {
+  const persistCachedUser = (nextUser: LocalUser | null) => {
+    if (typeof window === 'undefined') return
+    try {
+      if (!nextUser) {
+        localStorage.removeItem(STORAGE_CURRENT_USER_KEY)
+        return
+      }
+      localStorage.setItem(STORAGE_CURRENT_USER_KEY, JSON.stringify(nextUser))
+    } catch (err) {
+      console.error('❌ Erro ao persistir usuário no cache:', err)
+    }
+  }
+
+  const fetchUserProfile = async (userId: string) => {
+    if (!supabase) return null
+    const { data, error } = await supabase
+      .from('users')
+      .select('name, cpf_cnpj, phone, receive_orders_enabled, dismiss_receive_orders_banner')
+      .eq('id', userId)
+      .maybeSingle()
+
+    if (error) {
+      console.warn('⚠️ Não foi possível carregar perfil do usuário:', error)
+      return null
+    }
+
+    return data
+  }
+
+  const buildUserFromSession = async (sessionUser: User | null): Promise<LocalUser | null> => {
     if (!sessionUser) return null
     const cachedUser = getCachedUser(sessionUser.email ?? undefined)
+    const profile = await fetchUserProfile(sessionUser.id)
     const email = sessionUser.email ?? cachedUser?.email ?? ''
     const companyName =
+      profile?.name ||
       cachedUser?.companyName ||
       (sessionUser.user_metadata?.companyName as string | undefined) ||
       email ||
@@ -112,12 +149,15 @@ export function useAuth() {
     return normalizeUser({
       companyName,
       email,
-      cpfCnpj: cachedUser?.cpfCnpj ?? null,
+      cpfCnpj: profile?.cpf_cnpj ?? cachedUser?.cpfCnpj ?? null,
       printers: cachedUser?.printers ?? [],
       displayName: cachedUser?.displayName ?? companyName,
-      phone: cachedUser?.phone ?? null,
+      phone: profile?.phone ?? cachedUser?.phone ?? null,
       address: cachedUser?.address ?? null,
       logoUrl: cachedUser?.logoUrl ?? null,
+      receiveOrdersEnabled: profile?.receive_orders_enabled ?? cachedUser?.receiveOrdersEnabled ?? false,
+      dismissReceiveOrdersBanner:
+        profile?.dismiss_receive_orders_banner ?? cachedUser?.dismissReceiveOrdersBanner ?? false,
       graficaId: cachedUser?.graficaId,
     })
   }
@@ -143,7 +183,9 @@ export function useAuth() {
         }
         if (isMounted) {
           const sessionUser = data.session?.user ?? null
-          setUser(buildUserFromSession(sessionUser))
+          const nextUser = await buildUserFromSession(sessionUser)
+          setUser(nextUser)
+          persistCachedUser(nextUser)
           setIsLoading(false)
         }
       } catch (err) {
@@ -159,9 +201,11 @@ export function useAuth() {
 
     if (!supabase) return () => {}
 
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!isMounted) return
-      setUser(buildUserFromSession(session?.user ?? null))
+      const nextUser = await buildUserFromSession(session?.user ?? null)
+      setUser(nextUser)
+      persistCachedUser(nextUser)
       setIsLoading(false)
     })
 
@@ -205,14 +249,18 @@ export function useAuth() {
 
         if (signInError || !data?.user) {
           console.error('❌ Erro Supabase login:', signInError)
-          setError(signInError.message || 'Erro ao fazer login. Tente novamente.')
+          setError(signInError?.message || 'Erro ao fazer login. Tente novamente.')
           setIsLoading(false)
           throw signInError || new Error('Usuário não retornado pelo Supabase')
         }
 
-        const cachedUser = getCachedUser(email)
-        const needsOnboarding = !cachedUser?.cpfCnpj || cachedUser.cpfCnpj.trim() === ''
-        const redirectPath = needsOnboarding ? '/setup' : '/dashboard'
+        const nextUser = await buildUserFromSession(data.user)
+        setUser(nextUser)
+        persistCachedUser(nextUser)
+
+        const needsProfileCompletion =
+          !nextUser?.cpfCnpj || nextUser.cpfCnpj.trim() === '' || !nextUser?.phone || nextUser.phone.trim() === ''
+        const redirectPath = needsProfileCompletion ? '/setup' : '/dashboard'
 
         setIsLoading(false)
         router.replace(redirectPath)
@@ -389,7 +437,13 @@ export function useAuth() {
     }
   }
 
-  const register = async (companyName: string, email: string, password: string) => {
+  const register = async (
+    companyName: string,
+    email: string,
+    password: string,
+    cpfCnpj: string,
+    phone: string
+  ) => {
     setIsLoading(true)
     setError(null)
 
@@ -397,7 +451,7 @@ export function useAuth() {
 
     try {
       if (supabase) {
-        const { data, error: signUpError } = await signUpWithEmail(companyName, email, password)
+        const { data, error: signUpError } = await signUpWithEmail(companyName, email, password, cpfCnpj, phone)
 
         if (signUpError || !data?.user) {
           console.error('❌ Erro Supabase registro:', signUpError)
@@ -406,23 +460,43 @@ export function useAuth() {
           throw signUpError || new Error('Erro ao criar conta.')
         }
 
-        const userData: LocalUser = {
+        const userData: LocalUser = normalizeUser({
           companyName,
           email,
-          cpfCnpj: null,
+          cpfCnpj: cpfCnpj.trim(),
           printers: [],
           displayName: companyName,
-          phone: null,
+          phone: phone.trim(),
           address: null,
           logoUrl: null,
-        }
+          receiveOrdersEnabled: false,
+          dismissReceiveOrdersBanner: false,
+        })
 
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(STORAGE_CURRENT_USER_KEY, JSON.stringify(userData))
+        setUser(userData)
+        persistCachedUser(userData)
+
+        const users = getStoredUsers()
+        if (!users.find(u => u.email === email)) {
+          users.push({
+            companyName,
+            email,
+            password,
+            cpfCnpj: userData.cpfCnpj,
+            printers: [],
+            displayName: userData.displayName,
+            phone: userData.phone,
+            address: null,
+            logoUrl: null,
+            receiveOrdersEnabled: userData.receiveOrdersEnabled,
+            dismissReceiveOrdersBanner: userData.dismissReceiveOrdersBanner,
+            graficaId: generateGraficaId(),
+          })
+          saveStoredUsers(users)
         }
 
         setIsLoading(false)
-        router.replace('/setup')
+        router.replace('/dashboard')
         return
       }
 
@@ -563,19 +637,45 @@ export function useAuth() {
     console.log('🔄 Atualizando dados do usuário:', updates)
 
     try {
-      // Atualiza o objeto do usuário
-      const updatedUser: LocalUser = {
+      const updatedUser: LocalUser = normalizeUser({
         ...user,
-        ...updates
+        ...updates,
+      })
+
+      if (supabase) {
+        const { data: authData, error: authError } = await supabase.auth.getUser()
+        if (authError) {
+          console.error('❌ Erro ao obter usuário do Supabase:', authError)
+        } else if (authData.user) {
+          const profileUpdates: Record<string, unknown> = {}
+          if (updates.companyName !== undefined) profileUpdates.name = updatedUser.companyName
+          if (updates.cpfCnpj !== undefined) profileUpdates.cpf_cnpj = updatedUser.cpfCnpj
+          if (updates.phone !== undefined) profileUpdates.phone = updatedUser.phone
+          if (updates.receiveOrdersEnabled !== undefined) {
+            profileUpdates.receive_orders_enabled = !!updatedUser.receiveOrdersEnabled
+          }
+          if (updates.dismissReceiveOrdersBanner !== undefined) {
+            profileUpdates.dismiss_receive_orders_banner = !!updatedUser.dismissReceiveOrdersBanner
+          }
+
+          if (Object.keys(profileUpdates).length > 0) {
+            const { error: updateError } = await supabase
+              .from('users')
+              .update(profileUpdates)
+              .eq('id', authData.user.id)
+            if (updateError) {
+              console.error('❌ Erro ao atualizar perfil no Supabase:', updateError)
+            }
+          }
+        }
       }
 
+      // Atualiza o objeto do usuário
       // Atualiza o estado local
       setUser(updatedUser)
 
       // Atualiza o localStorage do usuário atual
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(STORAGE_CURRENT_USER_KEY, JSON.stringify(updatedUser))
-      }
+      persistCachedUser(updatedUser)
 
       // Atualiza também na lista de usuários (para manter sincronizado)
       const users = getStoredUsers()
@@ -596,6 +696,8 @@ export function useAuth() {
           phone: updatedUser.phone,
           address: updatedUser.address,
           logoUrl: updatedUser.logoUrl,
+          receiveOrdersEnabled: updatedUser.receiveOrdersEnabled,
+          dismissReceiveOrdersBanner: updatedUser.dismissReceiveOrdersBanner,
           graficaId: users[userIndex].graficaId, // Mantém o graficaId existente
         }
         saveStoredUsers(users)

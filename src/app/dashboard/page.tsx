@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth, Printer } from '@/hooks/useAuth'
 import { motion, AnimatePresence } from 'framer-motion'
+import { AlertCircle } from 'lucide-react'
 import Card from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -18,6 +19,7 @@ import { Order, OrderStatus, loadOrdersFromStorage } from '@/types/orders'
 import { cancelarPedido } from '@/utils/orders'
 import NewOrderModal from '@/components/NewOrderModal'
 import CancelOrderModal from '@/components/CancelOrderModal'
+import { loadUserActiveMaterials } from '@/utils/userMaterials'
 
 type Material = {
   id: string
@@ -71,6 +73,7 @@ export default function DashboardPage() {
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null)
   const [hoveredOrderId, setHoveredOrderId] = useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isUpdatingReceiveOrders, setIsUpdatingReceiveOrders] = useState(false)
 
   // Estados para formulários
   const [newPrinter, setNewPrinter] = useState<Omit<Printer, 'id'>>({
@@ -82,6 +85,21 @@ export default function DashboardPage() {
     name: '',
     technology: '',
   })
+
+  const hasPrinters = (user?.printers?.length ?? 0) > 0
+  const hasMaterials = user ? loadUserActiveMaterials(user.email).length > 0 : false
+  const shouldShowReceiveOrdersBanner =
+    !!user && !user.receiveOrdersEnabled && !user.dismissReceiveOrdersBanner
+
+  useEffect(() => {
+    if (!user || isLoading) return
+    if (!user.dismissReceiveOrdersBanner && !user.receiveOrdersEnabled && hasPrinters && hasMaterials) {
+      setIsUpdatingReceiveOrders(true)
+      updateUser({ receiveOrdersEnabled: true })
+        .catch((err) => console.error('Erro ao ativar recebimento de pedidos:', err))
+        .finally(() => setIsUpdatingReceiveOrders(false))
+    }
+  }, [user, isLoading, hasPrinters, hasMaterials, updateUser])
 
   // Carrega pedidos do localStorage
   useEffect(() => {
@@ -316,6 +334,48 @@ export default function DashboardPage() {
           userEmail={user?.email || ''}
           onLogout={handleLogout}
         />
+
+        {shouldShowReceiveOrdersBanner && (
+          <div className="mx-4 md:mx-8 mt-6 mb-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 text-amber-600">
+                  <AlertCircle className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-amber-900">
+                    Para receber pedidos, complete impressoras e materiais.
+                  </p>
+                  <p className="text-xs text-amber-800">
+                    Você pode continuar criando pedidos, mas não entrará no algoritmo de entrega.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="primary"
+                  onClick={() => router.push('/setup')}
+                >
+                  Completar agora
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    setIsUpdatingReceiveOrders(true)
+                    try {
+                      await updateUser({ dismissReceiveOrdersBanner: true })
+                    } finally {
+                      setIsUpdatingReceiveOrders(false)
+                    }
+                  }}
+                  disabled={isUpdatingReceiveOrders}
+                >
+                  Não mostrar mais
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Conteúdo */}
         <div className="p-4 md:p-8">

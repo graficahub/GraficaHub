@@ -26,6 +26,8 @@ export default function RegisterPage() {
   const router = useRouter()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [cpfCnpj, setCpfCnpj] = useState('')
+  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -42,6 +44,14 @@ export default function RegisterPage() {
       newErrors.email = 'Email é obrigatório'
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       newErrors.email = 'Email inválido'
+    }
+
+    if (!cpfCnpj.trim()) {
+      newErrors.cpfCnpj = 'CPF/CNPJ é obrigatório'
+    }
+
+    if (!phone.trim()) {
+      newErrors.phone = 'Celular é obrigatório'
     }
 
     if (!password.trim()) {
@@ -67,7 +77,7 @@ export default function RegisterPage() {
     try {
       console.log("Enviando formulário de REGISTRO", { email, name });
 
-      const { data, error } = await signUpWithEmail(name, email, password);
+      const { data, error } = await signUpWithEmail(name, email, password, cpfCnpj, phone);
 
       if (error || !data?.user) {
         console.error("Erro Supabase registro", error);
@@ -109,8 +119,8 @@ export default function RegisterPage() {
         // Continua com role = 'user' (já definido como default)
       }
 
-      // Se role for 'admin', vai para /admin; caso contrário, vai para /setup
-      const redirectPath = role === "admin" ? "/admin" : "/setup";
+      // Se role for 'admin', vai para /admin; caso contrário, vai para /dashboard
+      const redirectPath = role === "admin" ? "/admin" : "/dashboard";
       console.log(`🚀 Redirecionando para: ${redirectPath}`);
 
       setIsLoading(false); // Desativa loading antes de redirecionar
@@ -137,6 +147,10 @@ export default function RegisterPage() {
       setName(value)
     } else if (field === 'email') {
       setEmail(value)
+    } else if (field === 'cpfCnpj') {
+      setCpfCnpj(value)
+    } else if (field === 'phone') {
+      setPhone(value)
     } else if (field === 'password') {
       setPassword(value)
     }
@@ -202,6 +216,28 @@ export default function RegisterPage() {
                 onChange={(e) => handleChange('email', e.target.value)}
                 error={errors.email}
                 autoComplete="email"
+                required
+                disabled={isLoading}
+              />
+
+              <Input
+                label="CPF/CNPJ"
+                type="text"
+                placeholder="Digite o CPF ou CNPJ"
+                value={cpfCnpj}
+                onChange={(e) => handleChange('cpfCnpj', e.target.value)}
+                error={errors.cpfCnpj}
+                required
+                disabled={isLoading}
+              />
+
+              <Input
+                label="Celular"
+                type="tel"
+                placeholder="Digite o celular"
+                value={phone}
+                onChange={(e) => handleChange('phone', e.target.value)}
+                error={errors.phone}
                 required
                 disabled={isLoading}
               />

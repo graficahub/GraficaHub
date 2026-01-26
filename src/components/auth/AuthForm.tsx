@@ -15,6 +15,8 @@ export default function AuthForm({ mode }: AuthFormProps) {
   const { login, register, isLoading, error: authError, clearError } = useAuth()
   const [formData, setFormData] = useState({
     companyName: '',
+    cpfCnpj: '',
+    phone: '',
     email: '',
     password: '',
   })
@@ -38,6 +40,14 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
     if (mode === 'register' && !formData.companyName.trim()) {
       newErrors.companyName = 'Nome da empresa é obrigatório'
+    }
+
+    if (mode === 'register' && !formData.cpfCnpj.trim()) {
+      newErrors.cpfCnpj = 'CPF/CNPJ é obrigatório'
+    }
+
+    if (mode === 'register' && !formData.phone.trim()) {
+      newErrors.phone = 'Celular é obrigatório'
     }
 
     if (!formData.email.trim()) {
@@ -75,7 +85,13 @@ export default function AuthForm({ mode }: AuthFormProps) {
         console.log('✅ Login concluído com sucesso!')
       } else {
         console.log('📝 Tentando criar conta...')
-        await register(formData.companyName, formData.email, formData.password)
+        await register(
+          formData.companyName,
+          formData.email,
+          formData.password,
+          formData.cpfCnpj,
+          formData.phone
+        )
         console.log('✅ Cadastro concluído com sucesso!')
       }
     } catch (error) {
@@ -119,6 +135,30 @@ export default function AuthForm({ mode }: AuthFormProps) {
             onChange={(e) => handleChange('companyName', e.target.value)}
             error={errors.companyName}
             autoComplete="organization"
+            required
+          />
+        )}
+
+        {mode === 'register' && (
+          <Input
+            label="CPF/CNPJ"
+            type="text"
+            placeholder="Digite o CPF ou CNPJ"
+            value={formData.cpfCnpj}
+            onChange={(e) => handleChange('cpfCnpj', e.target.value)}
+            error={errors.cpfCnpj}
+            required
+          />
+        )}
+
+        {mode === 'register' && (
+          <Input
+            label="Celular"
+            type="tel"
+            placeholder="Digite o celular"
+            value={formData.phone}
+            onChange={(e) => handleChange('phone', e.target.value)}
+            error={errors.phone}
             required
           />
         )}

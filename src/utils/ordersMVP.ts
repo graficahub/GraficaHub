@@ -113,7 +113,19 @@ function distributeOrderToPrinters(order: OrderMVP): void {
     
     // Filtra gráficas compatíveis
     const compatiblePrinters = users.filter((user: any) => {
+      const receiveOrdersEnabled =
+        user.receive_orders_enabled ?? user.receiveOrdersEnabled ?? false
+
+      if (!receiveOrdersEnabled) return false
       if (!user.printers || user.printers.length === 0) return false
+
+      try {
+        const { loadUserActiveMaterials } = require('./userMaterials')
+        const activeMaterials = loadUserActiveMaterials(user.email)
+        if (!activeMaterials || activeMaterials.length === 0) return false
+      } catch {
+        return false
+      }
       
       // Verifica se a gráfica tem impressora com tecnologia compatível
       return user.printers.some((printer: any) => {

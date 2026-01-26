@@ -103,7 +103,13 @@ export async function signInWithEmail(email: string, password: string) {
   return { data, error };
 }
 
-export async function signUpWithEmail(name: string, email: string, password: string) {
+export async function signUpWithEmail(
+  name: string,
+  email: string,
+  password: string,
+  cpfCnpj?: string,
+  phone?: string
+) {
   if (!supabase) {
     return {
       data: null,
@@ -126,27 +132,23 @@ export async function signUpWithEmail(name: string, email: string, password: str
     return { data: null, error: new Error("Usuário não retornado pelo Supabase") as any };
   }
 
-  // Cria registro na tabela users com role = 'user' por padrão
-  const { error: insertError } = await supabase.from("users").insert({
+  // Atualiza (ou cria) registro na tabela users com dados mínimos obrigatórios
+  const { error: upsertError } = await supabase.from("users").upsert({
     id: user.id,
     email,
     name,
+    cpf_cnpj: cpfCnpj ?? null,
+    phone: phone ?? null,
     role: "user",
-  });
+    receive_orders_enabled: false,
+    dismiss_receive_orders_banner: false,
+  }, { onConflict: 'id' });
 
-  if (insertError) {
-    // Se erro é "duplicate key" (23505), significa que o usuário já existe (pode ter sido criado antes)
-    if (insertError.code === '23505' || insertError.message?.includes('duplicate')) {
-      console.warn("Usuário já existe na tabela users (provavelmente criado anteriormente), continuando...");
-      // Continua mesmo assim, pois o usuário já existe
-    } else {
-      console.error("Erro ao inserir usuário na tabela users:", insertError);
-      // Não bloqueia o cadastro se houver erro - o usuário pode logar mesmo sem linha na tabela users
-      // (o getUserRole retornará 'user' como default)
-      console.warn("⚠️ Continuando cadastro mesmo com erro na inserção da tabela users. O usuário poderá fazer login.");
-    }
+  if (upsertError) {
+    console.error("Erro ao atualizar usuário na tabela users:", upsertError);
+    console.warn("⚠️ Continuando cadastro mesmo com erro na atualização da tabela users.");
   } else {
-    console.log("✅ Usuário inserido na tabela users com sucesso");
+    console.log("✅ Usuário atualizado na tabela users com sucesso");
   }
 
   return { data, error: null };

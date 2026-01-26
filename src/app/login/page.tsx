@@ -20,6 +20,7 @@ import Card from '@/components/ui/Card'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import { signInWithEmail, getUserRole } from "@/lib/auth";
+import { supabase } from '@/lib/supabaseClient'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -103,8 +104,18 @@ export default function LoginPage() {
         // Continua com role = 'user' (já definido como default)
       }
 
-      // Se role for 'admin', vai para /admin; caso contrário, vai para /dashboard
-      const redirectPath = role === "admin" ? "/admin" : "/dashboard";
+      let needsProfileCompletion = false
+      if (supabase) {
+        const { data: profile } = await supabase
+          .from('users')
+          .select('cpf_cnpj, phone')
+          .eq('id', userId)
+          .maybeSingle()
+        needsProfileCompletion = !profile?.cpf_cnpj || !profile?.phone
+      }
+
+      // Se role for 'admin', vai para /admin; caso contrário, vai para /setup se faltar dados mínimos
+      const redirectPath = role === "admin" ? "/admin" : (needsProfileCompletion ? "/setup" : "/dashboard");
       console.log(`🚀 Redirecionando para: ${redirectPath}`);
 
       setIsLoading(false); // Desativa loading antes de redirecionar

@@ -8,6 +8,7 @@ import Card from '@/components/ui/Card'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import Button from '@/components/ui/Button'
+import { loadUserActiveMaterials } from '@/utils/userMaterials'
 
 // Opções pré-definidas
 const WIDTH_OPTIONS = [
@@ -36,6 +37,7 @@ export default function SetupPage() {
 
   // Estado do formulário
   const [cpfCnpj, setCpfCnpj] = useState('')
+  const [phone, setPhone] = useState('')
   const [printers, setPrinters] = useState<Printer[]>([
     {
       id: Date.now().toString(),
@@ -48,6 +50,7 @@ export default function SetupPage() {
   // Estado de validação e erros
   const [errors, setErrors] = useState<{
     cpfCnpj?: string
+    phone?: string
     printers?: string
   }>({})
   const [isSaving, setIsSaving] = useState(false)
@@ -59,17 +62,12 @@ export default function SetupPage() {
       console.log('🚫 Usuário não autenticado, redirecionando para /login')
       router.replace('/login')
     } else if (!authLoading && user) {
-      // Se o usuário já completou o onboarding, redireciona para dashboard
-      if (user.cpfCnpj && user.cpfCnpj.trim() !== '') {
-        console.log('✅ Onboarding já completo, redirecionando para /dashboard')
-        router.replace('/dashboard')
-      } else {
-        // Preenche os campos se já tiver dados parciais (apenas na primeira vez)
-        // Evita resetar o estado se o usuário já começou a preencher
-        setCpfCnpj(prev => prev || user.cpfCnpj || '')
-        if (user.printers && user.printers.length > 0) {
-          setPrinters(user.printers)
-        }
+      // Preenche os campos se já tiver dados parciais (apenas na primeira vez)
+      // Evita resetar o estado se o usuário já começou a preencher
+      setCpfCnpj(prev => prev || user.cpfCnpj || '')
+      setPhone(prev => prev || user.phone || '')
+      if (user.printers && user.printers.length > 0) {
+        setPrinters(user.printers)
       }
     }
   }, [user, authLoading, router])
@@ -120,34 +118,22 @@ export default function SetupPage() {
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {}
 
-    // Valida CPF/CNPJ
+    // Valida CPF/CNPJ e celular (dados mínimos)
     if (!cpfCnpj.trim()) {
       newErrors.cpfCnpj = 'CPF/CNPJ é obrigatório'
     }
 
-    // Valida impressoras: filtra apenas as válidas e verifica se há pelo menos uma
-    const validPrinters = printers.filter(p => 
-      p.width && p.width.trim() !== '' && p.inkTechnology && p.inkTechnology.trim() !== ''
+    if (!phone.trim()) {
+      newErrors.phone = 'Celular é obrigatório'
+    }
+
+    // Impressoras são opcionais, mas se houver preenchimento parcial, valida
+    const partialPrinters = printers.filter(p =>
+      (p.width && p.width.trim() !== '') !== (p.inkTechnology && p.inkTechnology.trim() !== '')
     )
 
-    // Verifica se há pelo menos uma impressora válida
-    if (validPrinters.length === 0) {
-      // Verifica se há impressoras no array mas todas estão vazias
-      if (printers.length === 0) {
-        newErrors.printers = 'Adicione pelo menos uma impressora'
-      } else {
-        // Há impressoras mas nenhuma está válida (preenchida)
-        newErrors.printers = 'Adicione pelo menos uma impressora com largura e tecnologia preenchidos'
-      }
-    } else {
-      // Verifica se há alguma impressora parcialmente preenchida (tem width mas não tecnologia ou vice-versa)
-      const partialPrinters = printers.filter(p => 
-        (p.width && p.width.trim() !== '') !== (p.inkTechnology && p.inkTechnology.trim() !== '')
-      )
-      
-      if (partialPrinters.length > 0) {
-        newErrors.printers = 'Todas as impressoras devem ter largura e tecnologia preenchidos'
-      }
+    if (partialPrinters.length > 0) {
+      newErrors.printers = 'Todas as impressoras devem ter largura e tecnologia preenchidos'
     }
 
     setErrors(newErrors)
@@ -172,20 +158,32 @@ export default function SetupPage() {
     setIsSaving(true)
 
     try {
-      // Prepara os dados atualizados (nome não é mais obrigatório)
-      const updatedPrinters = printers.filter(p => 
+      // Prepara os dados atualizados
+      const updatedPrinters = printers.filter(p =>
         p.width && p.inkTechnology
       )
 
+      const hasMaterials = user ? loadUserActiveMaterials(user.email).length > 0 : false
+      const shouldEnableReceiveOrders =
+        !!user &&
+        !user.dismissReceiveOrdersBanner &&
+        updatedPrinters.length > 0 &&
+        hasMaterials
+
       console.log('💾 Salvando dados:', {
         cpfCnpj,
-        printersCount: updatedPrinters.length
+        phone,
+        printersCount: updatedPrinters.length,
+        hasMaterials,
+        shouldEnableReceiveOrders,
       })
 
       // Atualiza o usuário
       await updateUser({
         cpfCnpj: cpfCnpj.trim(),
-        printers: updatedPrinters
+        phone: phone.trim(),
+        printers: updatedPrinters,
+        receiveOrdersEnabled: shouldEnableReceiveOrders || user?.receiveOrdersEnabled,
       })
 
       console.log('✅ Onboarding salvo com sucesso! Redirecionando para /dashboard')
@@ -280,6 +278,20 @@ export default function SetupPage() {
                   error={errors.cpfCnpj}
                   required
                 />
+                <Input
+                  label="Celular"
+                  type="tel"
+                  placeholder="Digite o celular"
+                  value={phone}
+                  onChange={(e) => {
+                    setPhone(e.target.value)
+                    if (errors.phone) {
+                      setErrors(prev => ({ ...prev, phone: undefined }))
+                    }
+                  }}
+                  error={errors.phone}
+                  required
+                />
               </div>
 
               {/* Sessão 2: Equipamentos */}
@@ -289,6 +301,9 @@ export default function SetupPage() {
                     Equipamentos (impressoras)
                   </h2>
                 </div>
+                <p className="text-sm text-slate-400">
+                  Você pode completar impressoras e materiais depois no dashboard.
+                </p>
 
                 {/* Lista de impressoras */}
                 <div className="space-y-4">
