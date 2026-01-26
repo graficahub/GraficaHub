@@ -100,7 +100,7 @@ export default function PropostasPage() {
   // Loading
   if (isLoading) {
     return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+      <div className="min-h-screen w-full bg-gray-50">
         <main className="min-h-screen flex flex-col items-center justify-center">
           <div className="text-center text-white">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
@@ -120,14 +120,8 @@ export default function PropostasPage() {
   const proposalsForPedido = mockProposals.filter(p => p.pedidoId === pedidoId)
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+    <div className="min-h-screen w-full bg-gray-50">
       {/* Efeito vignette */}
-      <div
-        className="fixed inset-0 pointer-events-none z-0"
-        style={{
-          background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.15) 100%)',
-        }}
-      />
 
       <main className="relative z-10 min-h-screen">
         {/* Header */}

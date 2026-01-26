@@ -104,7 +104,7 @@ export default function MateriaisV2Page() {
   const userTechs = getUserTechnologies()
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+    <div className="min-h-screen w-full bg-gray-50">
       <Sidebar
         userEmail={user?.email || ''}
         isMobileOpen={sidebarOpen}

@@ -80,7 +80,7 @@ export default function CriarPedidoPage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+    <div className="min-h-screen w-full bg-gray-50">
       <Sidebar isMobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} />
       {!sidebarOpen && <SidebarToggle onClick={() => setSidebarOpen(true)} />}
 

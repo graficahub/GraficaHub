@@ -42,7 +42,7 @@ export default function Sidebar({ userEmail, isMobileOpen = false, onMobileClose
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
           </svg>
           {hasPendingOrdersBadge && (
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-900" />
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white" />
           )}
         </div>
       ),
@@ -107,7 +107,7 @@ export default function Sidebar({ userEmail, isMobileOpen = false, onMobileClose
       {/* Overlay para mobile */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          className="fixed inset-0 bg-black/20 z-30 md:hidden"
           onClick={onMobileClose}
         />
       )}
@@ -115,29 +115,29 @@ export default function Sidebar({ userEmail, isMobileOpen = false, onMobileClose
       <aside
         className={`
           fixed left-0 top-0 h-screen
-          bg-slate-900/95 backdrop-blur-sm
-          border-r border-white/10
+          bg-white border-r border-gray-200
           flex flex-col
           z-40
           transition-all duration-300
+          shadow-sm
           ${isCollapsed ? 'w-20' : 'w-64'}
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}
       >
       {/* Logo e botão de colapsar */}
-      <div className="p-4 border-b border-white/10">
+      <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           {!isCollapsed && (
-            <h1 className="text-xl font-bold text-white">GraficaHub</h1>
+            <h1 className="text-xl font-bold text-gray-900">GraficaHub</h1>
           )}
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="hidden md:block p-2 hover:bg-white/10 rounded-lg transition-colors"
+              className="hidden md:block p-2 hover:bg-gray-100 rounded-lg transition-colors"
               aria-label={isCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
             >
               <svg
-                className={`w-5 h-5 text-slate-400 transition-transform ${isCollapsed ? 'rotate-180' : ''}`}
+                className={`w-5 h-5 text-gray-600 transition-transform ${isCollapsed ? 'rotate-180' : ''}`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -152,11 +152,11 @@ export default function Sidebar({ userEmail, isMobileOpen = false, onMobileClose
             </button>
             <button
               onClick={onMobileClose}
-              className="md:hidden p-2 hover:bg-white/10 rounded-lg transition-colors"
+              className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
               aria-label="Fechar sidebar"
             >
               <svg
-                className="w-5 h-5 text-slate-400"
+                className="w-5 h-5 text-gray-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -192,14 +192,14 @@ export default function Sidebar({ userEmail, isMobileOpen = false, onMobileClose
                     transition-all duration-200
                     ${
                       active
-                        ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
-                        : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                     }
                     ${isCollapsed ? 'justify-center' : ''}
                   `}
                   title={isCollapsed ? item.label : undefined}
                 >
-                  <span className={active ? 'text-blue-400' : 'text-slate-400'}>
+                  <span className={active ? 'text-blue-600' : 'text-gray-500'}>
                     {item.icon}
                   </span>
                   {!isCollapsed && (
@@ -214,16 +214,16 @@ export default function Sidebar({ userEmail, isMobileOpen = false, onMobileClose
 
       {/* Rodapé com email do usuário */}
       {userEmail && (
-        <div className="p-4 border-t border-white/10">
+        <div className="p-4 border-t border-gray-200">
           {!isCollapsed ? (
-            <div className="p-3 bg-white/5 rounded-lg border border-white/10">
-              <p className="text-xs text-slate-400 mb-1">Logado como</p>
-              <p className="text-sm text-white font-medium truncate">{userEmail}</p>
+            <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <p className="text-xs text-gray-600 mb-1">Logado como</p>
+              <p className="text-sm text-gray-900 font-medium truncate">{userEmail}</p>
             </div>
           ) : (
             <div className="flex justify-center">
-              <div className="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/30 flex items-center justify-center">
-                <span className="text-white text-xs font-bold">
+              <div className="w-8 h-8 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center">
+                <span className="text-blue-700 text-xs font-bold">
                   {userEmail.charAt(0).toUpperCase()}
                 </span>
               </div>
@@ -241,10 +241,10 @@ export function SidebarToggle({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="md:hidden fixed top-4 left-4 z-30 p-2 bg-slate-900/90 backdrop-blur-sm border border-white/10 rounded-lg hover:bg-slate-800 transition-colors"
+      className="md:hidden fixed top-4 left-4 z-30 p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
       aria-label="Abrir menu"
     >
-      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
       </svg>
     </button>

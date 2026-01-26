@@ -11,12 +11,11 @@ interface CardProps {
 
 export default function Card({ children, className = '', onClick }: CardProps) {
   const baseStyles = `
-    bg-white/10 
-    backdrop-blur-md
-    border border-white/20 
+    bg-white 
+    border border-gray-200 
     rounded-lg
-    shadow-md
-    ${onClick ? 'cursor-pointer' : ''}
+    shadow-sm
+    ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}
     ${className}
   `
 

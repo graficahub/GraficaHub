@@ -188,11 +188,11 @@ export default function SettingsPage() {
   // Loading
   if (isLoading) {
     return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+      <div className="min-h-screen w-full bg-gray-50">
         <main className="min-h-screen flex flex-col items-center justify-center">
-          <div className="text-center text-white">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-            <p className="text-slate-300">Carregando...</p>
+          <div className="text-center text-gray-900">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-400 mx-auto mb-4"></div>
+            <p className="text-gray-600">Carregando...</p>
           </div>
         </main>
       </div>
@@ -204,14 +204,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
-      {/* Efeito vignette */}
-      <div 
-        className="fixed inset-0 pointer-events-none z-0"
-        style={{
-          background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.15) 100%)'
-        }}
-      />
+    <div className="min-h-screen w-full bg-gray-50">
 
       <main className="relative z-10 min-h-screen">
         {/* Header */}

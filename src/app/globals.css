@@ -3,17 +3,17 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
+  --foreground-rgb: 15, 23, 42;
+  --background-start-rgb: 248, 250, 252;
   --background-end-rgb: 255, 255, 255;
   --font-inter: var(--font-inter);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
+    --foreground-rgb: 15, 23, 42;
+    --background-start-rgb: 248, 250, 252;
+    --background-end-rgb: 255, 255, 255;
   }
 }
 
@@ -29,7 +29,7 @@ html {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
-  background: #0f172a;
+  background: #f8fafc;
 }
 
 body {
@@ -40,6 +40,6 @@ body {
   overflow-x: hidden;
   color: rgb(var(--foreground-rgb));
   font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
-  background: #0f172a;
+  background: #f8fafc;
 }
 

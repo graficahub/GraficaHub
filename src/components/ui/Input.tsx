@@ -10,7 +10,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-slate-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             {label}
           </label>
         )}
@@ -18,15 +18,15 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           className={`
             w-full px-4 py-3 
-            bg-white/10 
-            border border-white/20 
+            bg-white 
+            border border-gray-300 
             rounded-lg 
-            text-white 
-            placeholder:text-slate-400
+            text-gray-900 
+            placeholder:text-gray-400
             focus:outline-none 
             focus:ring-2 
             focus:ring-blue-500 
-            focus:border-transparent
+            focus:border-blue-500
             transition-all duration-200
             ${error ? 'border-red-500 focus:ring-red-500' : ''}
             ${className}
@@ -34,7 +34,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           {...props}
         />
         {error && (
-          <p className="mt-1 text-sm text-red-400">{error}</p>
+          <p className="mt-1 text-sm text-red-600">{error}</p>
         )}
       </div>
     )

@@ -102,7 +102,7 @@ export default function AdminSidebar({ isMobileOpen = false, onMobileClose }: Ad
       {/* Overlay para mobile */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          className="fixed inset-0 bg-black/20 z-30 md:hidden"
           onClick={onMobileClose}
         />
       )}
@@ -110,32 +110,32 @@ export default function AdminSidebar({ isMobileOpen = false, onMobileClose }: Ad
       <aside
         className={`
           fixed left-0 top-0 h-screen
-          bg-slate-900/95 backdrop-blur-sm
-          border-r border-white/10
+          bg-white border-r border-gray-200
           flex flex-col
           z-40
           transition-all duration-300
+          shadow-sm
           ${isCollapsed ? 'w-20' : 'w-64'}
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}
       >
         {/* Logo e botão de colapsar */}
-        <div className="p-4 border-b border-white/10">
+        <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             {!isCollapsed && (
               <div>
-                <h1 className="text-xl font-bold text-white">GraficaHub</h1>
-                <p className="text-xs text-slate-400 mt-1">Painel Administrativo</p>
+                <h1 className="text-xl font-bold text-gray-900">GraficaHub</h1>
+                <p className="text-xs text-gray-600 mt-1">Painel Administrativo</p>
               </div>
             )}
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsCollapsed(!isCollapsed)}
-                className="hidden md:block p-2 hover:bg-white/10 rounded-lg transition-colors"
+                className="hidden md:block p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 aria-label={isCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
               >
                 <svg
-                  className={`w-5 h-5 text-slate-400 transition-transform ${isCollapsed ? 'rotate-180' : ''}`}
+                  className={`w-5 h-5 text-gray-600 transition-transform ${isCollapsed ? 'rotate-180' : ''}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -150,11 +150,11 @@ export default function AdminSidebar({ isMobileOpen = false, onMobileClose }: Ad
               </button>
               <button
                 onClick={onMobileClose}
-                className="md:hidden p-2 hover:bg-white/10 rounded-lg transition-colors"
+                className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 aria-label="Fechar sidebar"
               >
                 <svg
-                  className="w-5 h-5 text-slate-400"
+                  className="w-5 h-5 text-gray-600"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -190,14 +190,14 @@ export default function AdminSidebar({ isMobileOpen = false, onMobileClose }: Ad
                       transition-all duration-200
                       ${
                         active
-                          ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
-                          : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                          : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                       }
                       ${isCollapsed ? 'justify-center' : ''}
                     `}
                     title={isCollapsed ? item.label : undefined}
                   >
-                    <span className={active ? 'text-blue-400' : 'text-slate-400'}>
+                    <span className={active ? 'text-blue-600' : 'text-gray-500'}>
                       {item.icon}
                     </span>
                     {!isCollapsed && (
@@ -214,12 +214,12 @@ export default function AdminSidebar({ isMobileOpen = false, onMobileClose }: Ad
         {!isCollapsed && <AdminSaveControls />}
 
         {/* Botão de logout */}
-        <div className="p-4 border-t border-white/10">
+        <div className="p-4 border-t border-gray-200">
           <button
             onClick={handleLogout}
             className={`
               w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
-              text-slate-300 hover:bg-red-500/20 hover:text-red-400
+              text-gray-700 hover:bg-red-50 hover:text-red-600
               transition-all duration-200
               ${isCollapsed ? 'justify-center' : ''}
             `}
@@ -239,10 +239,10 @@ export function AdminSidebarToggle({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="md:hidden fixed top-4 left-4 z-30 p-2 bg-slate-900/90 backdrop-blur-sm border border-white/10 rounded-lg hover:bg-slate-800 transition-colors"
+      className="md:hidden fixed top-4 left-4 z-30 p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
       aria-label="Abrir menu"
     >
-      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
       </svg>
     </button>

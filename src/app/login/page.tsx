@@ -142,24 +142,17 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+    <div className="min-h-screen w-full bg-gray-50">
       <main className="min-h-screen flex flex-col items-center justify-center p-4 md:p-6 relative overflow-hidden">
-        {/* Efeito vignette */}
-        <div
-          className="absolute inset-0 pointer-events-none z-0"
-          style={{
-            background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.15) 100%)',
-          }}
-        />
 
         {/* Container principal centralizado */}
         <div className="relative z-10 w-full max-w-md flex flex-col items-center justify-center gap-6">
           {/* Logo e subtexto */}
           <div className="text-center">
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2 tracking-wide">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 tracking-wide">
               GraficaHub
             </h1>
-            <p className="text-sm md:text-base text-slate-400">
+            <p className="text-sm md:text-base text-gray-600">
               Entre na sua conta para continuar.
             </p>
           </div>
@@ -175,8 +168,8 @@ export default function LoginPage() {
             >
               {/* Exibe erro geral */}
               {error && (
-                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                  <p className="text-sm text-red-400">{error}</p>
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-600">{error}</p>
                 </div>
               )}
 
@@ -208,7 +201,7 @@ export default function LoginPage() {
                 <div className="mt-2 text-right">
                   <Link
                     href="/auth/forgot-password"
-                    className="text-xs text-blue-400 hover:text-blue-300 hover:underline transition-colors duration-200"
+                    className="text-xs text-blue-600 hover:text-blue-700 hover:underline transition-colors duration-200"
                   >
                     Esqueceu a senha?
                   </Link>
@@ -229,11 +222,11 @@ export default function LoginPage() {
 
               {/* Link para registro */}
               <div className="pt-2 text-center">
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-gray-600">
                   Não tem uma conta?{' '}
                   <Link
                     href="/register"
-                    className="text-blue-400 hover:text-blue-300 hover:underline transition-colors duration-200 font-medium"
+                    className="text-blue-600 hover:text-blue-700 hover:underline transition-colors duration-200 font-medium"
                   >
                     Criar conta
                   </Link>

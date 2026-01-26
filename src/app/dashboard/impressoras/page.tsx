@@ -167,26 +167,20 @@ export default function ImpressorasPage() {
 
   const getTechnologyColor = (technology: PrinterType['technology']) => {
     const colors: Record<PrinterType['technology'], string> = {
-      UV: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-      'Solvente/EcoSolvente': 'bg-green-500/20 text-green-400 border-green-500/30',
-      'Sublimação': 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-      'DTF Têxtil': 'bg-pink-500/20 text-pink-400 border-pink-500/30',
-      'DTF-UV': 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+      UV: 'bg-blue-100 text-blue-700 border-blue-200',
+      'Solvente/EcoSolvente': 'bg-green-100 text-green-700 border-green-200',
+      'Sublimação': 'bg-purple-100 text-purple-700 border-purple-200',
+      'DTF Têxtil': 'bg-pink-100 text-pink-700 border-pink-200',
+      'DTF-UV': 'bg-orange-100 text-orange-700 border-orange-200',
     }
-    return colors[technology] || 'bg-slate-500/20 text-slate-400 border-slate-500/30'
+    return colors[technology] || 'bg-gray-100 text-gray-700 border-gray-300'
   }
 
   // Autenticação é garantida pelo layout server-side
   // Não precisa mais verificar isLoading ou !user
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
-      <div
-        className="fixed inset-0 pointer-events-none z-0"
-        style={{
-          background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.15) 100%)',
-        }}
-      />
+    <div className="min-h-screen w-full bg-gray-50">
 
       <Sidebar
         userEmail={user?.email || ''}

@@ -20,13 +20,13 @@ export default function HeaderDashboard({
   const router = useRouter()
 
   return (
-    <header className="border-b border-white/10 bg-white/5 backdrop-blur-sm">
+    <header className="border-b border-gray-200 bg-white">
       <div className="px-4 md:px-8 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white">{title}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{title}</h1>
             {subtitle && (
-              <p className="text-slate-400 mt-1 text-sm md:text-base">
+              <p className="text-gray-600 mt-1 text-sm md:text-base">
                 {subtitle}
               </p>
             )}
@@ -35,7 +35,7 @@ export default function HeaderDashboard({
             <NotificationBell />
             <button
               onClick={() => router.push('/settings')}
-              className="px-3 py-2 text-slate-300 hover:text-white transition-colors text-sm font-medium"
+              className="px-3 py-2 text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium"
               title="Configurações"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -45,7 +45,7 @@ export default function HeaderDashboard({
             </button>
             <button
               onClick={onLogout}
-              className="px-3 py-2 text-slate-400 hover:text-white transition-colors text-sm"
+              className="px-3 py-2 text-gray-600 hover:text-gray-900 transition-colors text-sm"
               title="Sair"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

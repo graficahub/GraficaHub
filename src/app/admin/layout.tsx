@@ -69,10 +69,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   // Enquanto checa → só mostra o loading
   if (isChecking) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-100">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 text-gray-900">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
-          <p className="text-sm text-slate-300">Verificando permissões...</p>
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+          <p className="text-sm text-gray-600">Verificando permissões...</p>
         </div>
       </div>
     );
@@ -86,14 +86,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   // Admin autorizado → renderiza o painel com sidebar e estrutura completa
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
-      {/* Efeito vignette */}
-      <div 
-        className="fixed inset-0 pointer-events-none z-0"
-        style={{
-          background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.15) 100%)'
-        }}
-      />
+    <div className="min-h-screen w-full bg-gray-50">
 
       {/* Sidebar do Admin */}
       <AdminSidebar 

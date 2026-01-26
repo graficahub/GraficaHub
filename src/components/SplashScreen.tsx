@@ -32,11 +32,9 @@ export default function SplashScreen() {
 
   return (
     <div 
-      className="fixed inset-0 min-h-screen w-full flex items-center justify-center overflow-hidden"
+      className="fixed inset-0 min-h-screen w-full flex items-center justify-center overflow-hidden bg-gray-50"
       style={{ 
         zIndex: 99999,
-        backgroundColor: '#0f172a',
-        backgroundImage: 'linear-gradient(to bottom right, #020617, #1e293b, #334155)',
         position: 'fixed',
         top: 0,
         left: 0,
@@ -44,13 +42,6 @@ export default function SplashScreen() {
         bottom: 0
       }}
     >
-      {/* Efeito vignette - mais escuro nas bordas */}
-      <div 
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.15) 100%)'
-        }}
-      />
 
       {/* Conteúdo principal com animações */}
       <motion.div
@@ -68,12 +59,10 @@ export default function SplashScreen() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: isExiting ? 0 : 1, y: isExiting ? -10 : 0 }}
           transition={{ duration: 0.9, delay: 0.1, ease: 'easeOut' }}
-          className="text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-wide mb-4"
+          className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 tracking-wide mb-4"
           style={{
             fontWeight: 700,
-            textShadow: '0 1px 2px rgba(0, 0, 0, 0.35)',
-            letterSpacing: '0.05em',
-            color: '#ffffff'
+            letterSpacing: '0.05em'
           }}
         >
           GraficaHub
@@ -100,7 +89,7 @@ export default function SplashScreen() {
           animate={{ opacity: isExiting ? 0 : 0.4, width: isExiting ? 0 : '120px' }}
           transition={{ duration: 0.9, delay: 0.3, ease: 'easeOut' }}
           className="mx-auto mt-6 h-px"
-          style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}
+          style={{ backgroundColor: 'rgba(148, 163, 184, 0.3)' }}
         />
       </motion.div>
     </div>

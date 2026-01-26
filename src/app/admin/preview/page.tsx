@@ -36,13 +36,7 @@ export default function AdminPreviewPage() {
   // Esta página renderiza o dashboard normal, mas em modo preview
   // O dashboard já detecta o banner e lê dados do draft
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
-      <div
-        className="fixed inset-0 pointer-events-none z-0"
-        style={{
-          background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.15) 100%)',
-        }}
-      />
+    <div className="min-h-screen w-full bg-gray-50">
 
       {/* Banner especial de preview */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-blue-500/20 border-b border-blue-500/30 backdrop-blur-sm">

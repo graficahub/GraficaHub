@@ -22,8 +22,8 @@ export default function Button({
   
   const variantStyles = {
     primary: 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500',
-    secondary: 'bg-slate-700 hover:bg-slate-600 text-white focus:ring-slate-500',
-    outline: 'border-2 border-slate-600 hover:border-slate-500 text-slate-300 hover:text-white focus:ring-slate-500',
+    secondary: 'bg-gray-200 hover:bg-gray-300 text-gray-800 focus:ring-gray-400',
+    outline: 'border-2 border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 bg-white focus:ring-gray-400',
   }
   
   const widthStyle = fullWidth ? 'w-full' : ''

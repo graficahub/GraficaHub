@@ -275,14 +275,14 @@ export default function DashboardPage() {
   const getStatusColor = (status: OrderStatus) => {
     switch (status) {
       case 'Concluído':
-        return 'bg-green-500/20 text-green-400 border border-green-500/30'
+        return 'bg-green-100 text-green-700 border border-green-200'
       case 'Em produção':
-        return 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+        return 'bg-blue-100 text-blue-700 border border-blue-200'
       case 'Cancelado':
-        return 'bg-slate-500/20 text-slate-400 border border-slate-500/30'
+        return 'bg-gray-100 text-gray-700 border border-gray-300'
       case 'Em aberto':
       default:
-        return 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+        return 'bg-yellow-100 text-yellow-700 border border-yellow-200'
     }
   }
 
@@ -290,14 +290,7 @@ export default function DashboardPage() {
   // user pode ser null temporariamente enquanto carrega do localStorage, mas isso não deve bloquear renderização
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
-      {/* Efeito vignette */}
-      <div 
-        className="fixed inset-0 pointer-events-none z-0"
-        style={{
-          background: 'radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.15) 100%)'
-        }}
-      />
+    <div className="min-h-screen w-full bg-gray-50">
 
       {/* Sidebar */}
       <Sidebar 
@@ -357,8 +350,8 @@ export default function DashboardPage() {
               <Card className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-white">Pedidos recentes</h2>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <h2 className="text-lg font-semibold text-gray-900">Pedidos recentes</h2>
+                    <p className="text-xs text-gray-600 mt-1">
                       Pedidos recentes da sua gráfica
                     </p>
                   </div>
@@ -376,7 +369,7 @@ export default function DashboardPage() {
 
                 {/* Filtros */}
                 <div className="mb-4">
-                  <p className="text-xs text-slate-400 mb-2">Filtrar por status:</p>
+                  <p className="text-xs text-gray-600 mb-2">Filtrar por status:</p>
                   <div className="flex flex-wrap gap-2">
                     {(['Todos', 'Em aberto', 'Em produção', 'Concluído', 'Cancelado'] as FilterStatus[]).map((filter) => (
                       <button
@@ -384,8 +377,8 @@ export default function DashboardPage() {
                         onClick={() => setActiveFilter(filter)}
                         className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                           activeFilter === filter
-                            ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                            : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'
+                            ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                            : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
                         }`}
                       >
                         {filter}
@@ -398,18 +391,18 @@ export default function DashboardPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-white/10">
-                        <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">ID</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Serviço</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Status</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Prazo</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-slate-400">Ações</th>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">ID</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Serviço</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Status</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Prazo</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Ações</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredOrders.length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="py-8 text-center text-slate-400">
+                          <td colSpan={5} className="py-8 text-center text-gray-500">
                             Nenhum pedido encontrado.
                           </td>
                         </tr>
@@ -420,20 +413,20 @@ export default function DashboardPage() {
                             onMouseEnter={() => setHoveredOrderId(order.id)}
                             onMouseLeave={() => setHoveredOrderId(null)}
                             className={`
-                              border-b border-white/5 transition-colors
-                              ${index % 2 === 0 ? 'bg-white/2' : 'bg-white/5'}
+                              border-b border-gray-100 transition-colors
+                              ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
                               ${order.status === 'Cancelado' ? 'opacity-60' : ''}
-                              hover:bg-white/10
+                              hover:bg-gray-100
                             `}
                           >
-                            <td className="py-3 px-4 text-sm text-white font-mono">{order.id}</td>
-                            <td className="py-3 px-4 text-sm text-white">{order.service}</td>
+                            <td className="py-3 px-4 text-sm text-gray-900 font-mono">{order.id}</td>
+                            <td className="py-3 px-4 text-sm text-gray-900">{order.service}</td>
                             <td className="py-3 px-4">
                               <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
                                 {order.status}
                               </span>
                             </td>
-                            <td className="py-3 px-4 text-sm text-slate-300">{order.deadline}</td>
+                            <td className="py-3 px-4 text-sm text-gray-700">{order.deadline}</td>
                             <td className="py-3 px-4">
                               <div className="flex items-center gap-3">
                                 {order.status !== 'Cancelado' && (
@@ -441,7 +434,7 @@ export default function DashboardPage() {
                                     {order.status === 'Em aberto' && (
                                       <button
                                         onClick={() => router.push(`/pedidos/${order.id}/propostas`)}
-                                        className="text-sm text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1"
+                                        className="text-sm text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1"
                                       >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -466,7 +459,7 @@ export default function DashboardPage() {
                                   </>
                                 )}
                                 {order.status === 'Cancelado' && (
-                                  <span className="text-sm text-slate-500">Cancelado</span>
+                                  <span className="text-sm text-gray-600">Cancelado</span>
                                 )}
                               </div>
                             </td>
@@ -482,18 +475,18 @@ export default function DashboardPage() {
             {/* Coluna direita: Impressoras e Materiais */}
             <div className="space-y-6">
               <div>
-                <h2 className="text-lg font-semibold text-white mb-4">Configuração da gráfica</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Configuração da gráfica</h2>
                 
                 {/* Seção de Impressoras */}
                 <Card className="p-6 mb-6">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                    <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
                       <span>🖨️</span>
                       Impressoras
                     </h3>
                     <button
                       onClick={() => setShowAddPrinter(true)}
-                      className="text-blue-400 hover:text-blue-300 transition-colors text-sm font-medium"
+                      className="text-blue-600 hover:text-blue-700 transition-colors text-sm font-medium"
                     >
                       + Adicionar
                     </button>
@@ -501,7 +494,7 @@ export default function DashboardPage() {
 
                   <div className="space-y-3">
                     {printers.length === 0 ? (
-                      <p className="text-sm text-slate-400 text-center py-4">
+                      <p className="text-sm text-gray-600 text-center py-4">
                         Nenhuma impressora cadastrada
                       </p>
                     ) : (
@@ -510,10 +503,10 @@ export default function DashboardPage() {
                           key={printer.id}
                           className="p-3 bg-white/5 rounded-lg border border-white/10"
                         >
-                          <p className="text-sm font-medium text-white">
+                          <p className="text-sm font-medium text-gray-900">
                             {printer.name || 'Impressora sem nome'}
                           </p>
-                          <p className="text-xs text-slate-400 mt-1">
+                          <p className="text-xs text-gray-600 mt-1">
                             {printer.width} • {printer.inkTechnology}
                           </p>
                         </div>
@@ -525,7 +518,7 @@ export default function DashboardPage() {
                 {/* Seção de Materiais */}
                 <Card className="p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                    <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
                       <span>📦</span>
                       Materiais
                     </h3>
@@ -543,8 +536,8 @@ export default function DashboardPage() {
                         key={material.id}
                         className="p-3 bg-white/5 rounded-lg border border-white/10"
                       >
-                        <p className="text-sm font-medium text-white">{material.name}</p>
-                        <p className="text-xs text-slate-400 mt-1">{material.technology}</p>
+                        <p className="text-sm font-medium text-gray-900">{material.name}</p>
+                        <p className="text-xs text-gray-600 mt-1">{material.technology}</p>
                       </div>
                     ))}
                   </div>
@@ -584,7 +577,7 @@ export default function DashboardPage() {
               exit={{ opacity: 0, scale: 0.95 }}
               className="bg-slate-900 border border-white/20 rounded-2xl p-6 w-full max-w-md"
             >
-              <h3 className="text-xl font-semibold text-white mb-4">Adicionar Impressora</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Adicionar Impressora</h3>
               
               <div className="space-y-4">
                 <Input
@@ -647,7 +640,7 @@ export default function DashboardPage() {
               exit={{ opacity: 0, scale: 0.95 }}
               className="bg-slate-900 border border-white/20 rounded-2xl p-6 w-full max-w-md"
             >
-              <h3 className="text-xl font-semibold text-white mb-4">Adicionar Material</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Adicionar Material</h3>
               
               <div className="space-y-4">
                 <Input
