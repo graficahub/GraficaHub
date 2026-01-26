@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/auth-helpers-nextjs';
 
 /**
  * Layout do Dashboard - GraficaHub
@@ -22,21 +22,17 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     redirect('/login');
   }
 
-  // Cria cliente Supabase para server-side
-  // O Supabase JS SDK v2+ suporta cookies automaticamente quando usado em Server Components
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      storage: {
-        getItem: (key: string) => {
-          const cookie = cookieStore.get(key);
-          return cookie?.value ?? null;
-        },
-        setItem: () => {
-          // Não faz nada em server component
-        },
-        removeItem: () => {
-          // Não faz nada em server component
-        },
+  // Cria cliente Supabase para server-side usando cookies (auth-helpers)
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      get(name: string) {
+        return cookieStore.get(name)?.value;
+      },
+      set() {
+        // Server Components não podem setar cookies
+      },
+      remove() {
+        // Server Components não podem remover cookies
       },
     },
   });
