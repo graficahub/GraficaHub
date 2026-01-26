@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { createServerClient } from '@supabase/auth-helpers-nextjs';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 
 /**
  * Layout do Dashboard - GraficaHub
@@ -12,7 +12,7 @@ import { createServerClient } from '@supabase/auth-helpers-nextjs';
  * - Se houver usuário (qualquer role) → renderiza o layout normalmente
  */
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  const cookieStore = await cookies();
+  const cookieStore = cookies();
   
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -23,18 +23,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   }
 
   // Cria cliente Supabase para server-side usando cookies (auth-helpers)
-  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value;
-      },
-      set() {
-        // Server Components não podem setar cookies
-      },
-      remove() {
-        // Server Components não podem remover cookies
-      },
-    },
+  const supabase = createServerComponentClient({
+    cookies: () => cookieStore,
   });
 
   const {
