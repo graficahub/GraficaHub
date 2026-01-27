@@ -8,7 +8,7 @@ import { createSupabaseServerClient } from '@/lib/auth-server';
  * Server Component que protege rotas do setup:
  * - Verifica sessão do Supabase Auth usando cookies
  * - Se não houver sessão → redirect para /login
- * - Permite acesso sem verificar perfil completo (pois /setup/perfil é onde completa)
+ * - Permite acesso às rotas de setup (não verifica perfil completo)
  */
 export default async function SetupLayout({ children }: { children: ReactNode }) {
   const supabase = createSupabaseServerClient();

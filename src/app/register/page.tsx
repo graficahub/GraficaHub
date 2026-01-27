@@ -22,7 +22,6 @@ import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import { signUpWithEmail, getUserRole, updateUserProfile } from "@/lib/auth";
 import { supabase } from '@/lib/supabaseClient'
-import { isProfileComplete } from '@/lib/utils/profile'
 import { maskCpfCnpj, maskPhone, maskCEP } from '@/lib/utils/masks'
 import { validateCpfCnpj, validatePhone, validateCep, validateAddress, removeMask } from '@/lib/utils/validation'
 
@@ -142,7 +141,7 @@ export default function RegisterPage() {
 
       // Passo 2: Aguarda o trigger criar o registro e a sessão estar disponível
       // O trigger handle_new_auth_user cria o registro automaticamente
-      // Tentamos atualizar o perfil, mas se falhar, redirecionamos para /setup/perfil
+      // Tentamos atualizar o perfil, mas se falhar, o usuário pode completar depois no dashboard
       let profileUpdated = false;
       let attempts = 0;
       const maxAttempts = 3;
@@ -172,26 +171,11 @@ export default function RegisterPage() {
         }
       }
 
-      // Passo 3: Verifica se o perfil está completo após o update
-      let profileIsComplete = false;
-      if (profileUpdated && supabase) {
-        // Busca o perfil atualizado para verificar se está completo
-        const { data: updatedProfile } = await supabase
-          .from('users')
-          .select('email, name, cpf_cnpj, phone, address, cep')
-          .eq('id', userId)
-          .maybeSingle();
-
-        if (updatedProfile) {
-          profileIsComplete = isProfileComplete(updatedProfile);
-          console.log(profileIsComplete 
-            ? "✅ Perfil está completo após atualização" 
-            : "⚠️ Perfil ainda está incompleto após atualização");
-        }
-      }
-
+      // Passo 3: Log do resultado do update (não bloqueia o fluxo)
       if (!profileUpdated) {
-        console.warn("⚠️ Não foi possível atualizar perfil automaticamente. Usuário será redirecionado para /setup/perfil");
+        console.warn("⚠️ Não foi possível atualizar perfil automaticamente. Usuário pode completar depois no dashboard.");
+      } else {
+        console.log("✅ Perfil atualizado com sucesso");
       }
 
       // Passo 4: Busca role
@@ -205,26 +189,15 @@ export default function RegisterPage() {
         // Continua com role = 'user' (já definido como default)
       }
 
-      // Passo 5: Redireciona baseado no estado do perfil
-      // Se role for 'admin', vai para /admin
-      // Se perfil está completo, vai para /dashboard
-      // Se perfil está incompleto, vai para /setup/perfil
-      let redirectPath: string;
-      if (role === "admin") {
-        redirectPath = "/admin";
-      } else if (profileIsComplete) {
-        redirectPath = "/dashboard";
-        console.log("✅ Perfil completo - redirecionando para dashboard");
-      } else {
-        redirectPath = "/setup/perfil";
-        console.log("⚠️ Perfil incompleto - redirecionando para completar perfil");
-      }
+      // Passo 5: Redireciona sempre para dashboard (ou admin se for admin)
+      // Não bloqueia acesso por perfil incompleto - usuário pode completar depois
+      const redirectPath = role === "admin" ? "/admin" : "/dashboard";
       console.log(`🚀 Redirecionando para: ${redirectPath}`);
 
       setIsLoading(false); // Desativa loading antes de redirecionar
       
       try {
-        router.push(redirectPath);
+        router.replace(redirectPath);
       } catch (routerError) {
         console.error("❌ Erro ao redirecionar, usando window.location:", routerError);
         // Fallback para window.location se router falhar

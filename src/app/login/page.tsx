@@ -106,7 +106,6 @@ export default function LoginPage() {
       }
 
       // Após login, redireciona direto para dashboard
-      // O dashboard layout será responsável por verificar se o perfil está completo
       // Se role for 'admin', vai para /admin; caso contrário, vai para /dashboard
       const redirectPath = role === "admin" ? "/admin" : "/dashboard";
       console.log(`🚀 Redirecionando para: ${redirectPath}`);
