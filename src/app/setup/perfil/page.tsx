@@ -10,6 +10,7 @@ import Button from '@/components/ui/Button'
 import { maskCpfCnpj, maskPhone, maskCEP } from '@/lib/utils/masks'
 import { validateCpfCnpj, validatePhone, validateCep, validateAddress, removeMask } from '@/lib/utils/validation'
 import { isProfileComplete } from '@/lib/utils/profile'
+import { updateUserProfile } from '@/lib/auth'
 
 /**
  * Página para completar perfil básico
@@ -165,18 +166,15 @@ export default function CompletarPerfilPage() {
       const phoneCleaned = removeMask(phone)
       const cepCleaned = removeMask(cep)
 
-      // Atualiza perfil do usuário
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({
-          name: name.trim(),
-          email: email.trim(),
-          cpf_cnpj: cpfCnpjCleaned,
-          phone: phoneCleaned,
-          address: address.trim(),
-          cep: cepCleaned,
-        })
-        .eq('id', authUser.id)
+      // Atualiza perfil do usuário usando a função que faz apenas UPDATE
+      const { error: updateError } = await updateUserProfile(
+        name.trim(),
+        email.trim(),
+        cpfCnpjCleaned,
+        phoneCleaned,
+        address.trim(),
+        cepCleaned
+      )
 
       if (updateError) {
         console.error('Erro ao atualizar perfil:', updateError)

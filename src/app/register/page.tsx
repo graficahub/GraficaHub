@@ -20,9 +20,8 @@ import Link from 'next/link'
 import Card from '@/components/ui/Card'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
-import { signUpWithEmail, getUserRole } from "@/lib/auth";
+import { signUpWithEmail, getUserRole, updateUserProfile } from "@/lib/auth";
 import { supabase } from '@/lib/supabaseClient'
-import { isProfileComplete } from '@/lib/utils/profile'
 import { maskCpfCnpj, maskPhone, maskCEP } from '@/lib/utils/masks'
 import { validateCpfCnpj, validatePhone, validateCep, validateAddress, removeMask } from '@/lib/utils/validation'
 
@@ -104,14 +103,10 @@ export default function RegisterPage() {
       const phoneCleaned = removeMask(phone)
       const cepCleaned = removeMask(cep)
 
+      // Passo 1: Cria usuário no Auth (sem tocar em public.users)
       const { data, error } = await signUpWithEmail(
-        name.trim(),
         email.trim(),
-        password,
-        cpfCnpjCleaned,
-        phoneCleaned,
-        address.trim(),
-        cepCleaned
+        password
       );
 
       if (error || !data?.user) {
@@ -142,8 +137,46 @@ export default function RegisterPage() {
 
       console.log("✅ Cadastro bem-sucedido no Supabase Auth");
       console.log("🔍 UserId obtido:", userId);
-      console.log("🔍 Buscando role na tabela users...");
+      console.log("⏳ Aguardando trigger criar registro em public.users e sessão estar disponível...");
 
+      // Passo 2: Aguarda o trigger criar o registro e a sessão estar disponível
+      // O trigger handle_new_auth_user cria o registro automaticamente
+      // Tentamos atualizar o perfil, mas se falhar, redirecionamos para /setup/perfil
+      let profileUpdated = false;
+      let attempts = 0;
+      const maxAttempts = 3;
+
+      while (!profileUpdated && attempts < maxAttempts) {
+        attempts++;
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempts)); // Delay crescente
+
+        console.log(`📝 Tentativa ${attempts} de atualizar perfil do usuário...`);
+        const { error: updateError } = await updateUserProfile(
+          name.trim(),
+          email.trim(),
+          cpfCnpjCleaned,
+          phoneCleaned,
+          address.trim(),
+          cepCleaned
+        );
+
+        if (!updateError) {
+          console.log("✅ Perfil atualizado com sucesso");
+          profileUpdated = true;
+        } else {
+          console.warn(`⚠️ Tentativa ${attempts} falhou:`, updateError);
+          if (attempts < maxAttempts) {
+            console.log("🔄 Tentando novamente...");
+          }
+        }
+      }
+
+      if (!profileUpdated) {
+        console.warn("⚠️ Não foi possível atualizar perfil automaticamente. Usuário será redirecionado para /setup/perfil");
+        // Os dados serão salvos temporariamente ou o usuário preencherá novamente em /setup/perfil
+      }
+
+      // Passo 4: Busca role
       let role: "admin" | "user" = "user"; // Default para 'user'
       
       try {
@@ -154,10 +187,18 @@ export default function RegisterPage() {
         // Continua com role = 'user' (já definido como default)
       }
 
-      // Após salvar todos os dados no signup, redireciona direto para dashboard
-      // O dashboard layout será responsável por verificar se o perfil está completo
-      // Se role for 'admin', vai para /admin; caso contrário, vai para /dashboard
-      const redirectPath = role === "admin" ? "/admin" : "/dashboard";
+      // Passo 5: Redireciona
+      // Se role for 'admin', vai para /admin
+      // Se perfil foi atualizado, vai para /dashboard (layout verificará se está completo)
+      // Se perfil não foi atualizado, vai para /setup/perfil para completar
+      let redirectPath: string;
+      if (role === "admin") {
+        redirectPath = "/admin";
+      } else if (profileUpdated) {
+        redirectPath = "/dashboard";
+      } else {
+        redirectPath = "/setup/perfil";
+      }
       console.log(`🚀 Redirecionando para: ${redirectPath}`);
 
       setIsLoading(false); // Desativa loading antes de redirecionar

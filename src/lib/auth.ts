@@ -103,14 +103,13 @@ export async function signInWithEmail(email: string, password: string) {
   return { data, error };
 }
 
+/**
+ * Cria usuário no Supabase Auth
+ * NÃO faz insert/upsert em public.users - o trigger handle_new_auth_user faz isso
+ */
 export async function signUpWithEmail(
-  name: string,
   email: string,
-  password: string,
-  cpfCnpj?: string,
-  phone?: string,
-  address?: string,
-  cep?: string
+  password: string
 ) {
   if (!supabase) {
     return {
@@ -119,7 +118,8 @@ export async function signUpWithEmail(
     };
   }
 
-  // Cria usuário no Auth
+  // Cria usuário no Auth apenas
+  // O trigger handle_new_auth_user criará o registro em public.users automaticamente
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -134,28 +134,59 @@ export async function signUpWithEmail(
     return { data: null, error: new Error("Usuário não retornado pelo Supabase") as any };
   }
 
-  // Atualiza (ou cria) registro na tabela users com dados básicos obrigatórios
-  const { error: upsertError } = await supabase.from("users").upsert({
-    id: user.id,
-    email,
-    name,
-    cpf_cnpj: cpfCnpj ?? null,
-    phone: phone ?? null,
-    address: address ?? null,
-    cep: cep ?? null,
-    role: "user",
-    receive_orders_enabled: false,
-    dismiss_receive_orders_banner: false,
-  }, { onConflict: 'id' });
+  // NÃO faz upsert aqui - o trigger já criou o registro
+  // O update do perfil será feito depois, quando a sessão existir
+  return { data, error: null };
+}
 
-  if (upsertError) {
-    console.error("Erro ao atualizar usuário na tabela users:", upsertError);
-    console.warn("⚠️ Continuando cadastro mesmo com erro na atualização da tabela users.");
-  } else {
-    console.log("✅ Usuário atualizado na tabela users com sucesso");
+/**
+ * Atualiza o perfil do usuário em public.users
+ * Deve ser chamado APÓS o signup, quando a sessão já existir
+ * Faz apenas UPDATE (não INSERT) - o trigger já criou o registro
+ */
+export async function updateUserProfile(
+  name: string,
+  email: string,
+  cpfCnpj?: string,
+  phone?: string,
+  address?: string,
+  cep?: string
+) {
+  if (!supabase) {
+    return {
+      error: { message: "Supabase não está configurado" } as any,
+    };
   }
 
-  return { data, error: null };
+  // Obtém o usuário atual da sessão
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+  if (authError || !user) {
+    return {
+      error: { message: "Usuário não autenticado" } as any,
+    };
+  }
+
+  // Faz apenas UPDATE - o trigger já criou o registro
+  const { error: updateError } = await supabase
+    .from("users")
+    .update({
+      email,
+      name,
+      cpf_cnpj: cpfCnpj ?? null,
+      phone: phone ?? null,
+      address: address ?? null,
+      cep: cep ?? null,
+    })
+    .eq('id', user.id);
+
+  if (updateError) {
+    console.error("Erro ao atualizar perfil do usuário:", updateError);
+    return { error: updateError };
+  }
+
+  console.log("✅ Perfil do usuário atualizado com sucesso");
+  return { error: null };
 }
 
 export async function signOut() {
