@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabaseClient'
-import { signInWithEmail, signUpWithEmail } from '@/lib/auth'
+import { signInWithEmail, signUpWithEmail, updateUserProfile } from '@/lib/auth'
 import {
   isAdminEmail,
   validateAdminPassword,
@@ -451,13 +451,44 @@ export function useAuth() {
 
     try {
       if (supabase) {
-        const { data, error: signUpError } = await signUpWithEmail(companyName, email, password, cpfCnpj, phone)
+        // Passo 1: Cria usuário no Auth (sem tocar em public.users)
+        const { data, error: signUpError } = await signUpWithEmail(email, password)
 
         if (signUpError || !data?.user) {
           console.error('❌ Erro Supabase registro:', signUpError)
           setError(signUpError?.message || 'Erro ao criar conta. Tente novamente.')
           setIsLoading(false)
           throw signUpError || new Error('Erro ao criar conta.')
+        }
+
+        // Passo 2: Aguarda trigger criar registro e tenta atualizar perfil
+        // O trigger handle_new_auth_user cria o registro automaticamente
+        let profileUpdated = false
+        let attempts = 0
+        const maxAttempts = 3
+
+        while (!profileUpdated && attempts < maxAttempts) {
+          attempts++
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempts))
+
+          console.log(`📝 Tentativa ${attempts} de atualizar perfil do usuário...`)
+          const { error: updateError } = await updateUserProfile(
+            companyName,
+            email,
+            cpfCnpj.trim(),
+            phone.trim()
+          )
+
+          if (!updateError) {
+            console.log('✅ Perfil atualizado com sucesso')
+            profileUpdated = true
+          } else {
+            console.warn(`⚠️ Tentativa ${attempts} falhou:`, updateError)
+          }
+        }
+
+        if (!profileUpdated) {
+          console.warn('⚠️ Não foi possível atualizar perfil automaticamente. Usuário pode completar depois.')
         }
 
         const userData: LocalUser = normalizeUser({
