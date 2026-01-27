@@ -2,10 +2,10 @@
  * Página de Registro - GraficaHub
  * 
  * Fluxo de cadastro:
- * 1. Usuário preenche nome, email e senha
- * 2. Chama signUpWithEmail do Supabase Auth
- * 3. Após cadastro bem-sucedido, insere registro na tabela public.users
- * 4. Em caso de sucesso, redireciona para /admin
+ * 1. Usuário preenche todos os dados básicos (nome, email, senha, CPF/CNPJ, telefone, endereço, CEP)
+ * 2. Chama signUpWithEmail do Supabase Auth (apenas email e senha)
+ * 3. Atualiza perfil em public.users com os dados coletados
+ * 4. Em caso de sucesso, redireciona para /dashboard (ou /admin se for admin)
  * 5. Em caso de erro, exibe mensagem amigável
  * 
  * Design reutiliza componentes e estilos do GraficaHub existente.

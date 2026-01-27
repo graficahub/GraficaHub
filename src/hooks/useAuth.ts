@@ -398,11 +398,10 @@ export function useAuth() {
         details: { email, companyName: userData.companyName },
       })
       
-      // Verifica se precisa completar onboarding
-      const needsOnboarding = !userData.cpfCnpj || userData.cpfCnpj.trim() === ''
-      const redirectPath = needsOnboarding ? '/setup' : '/dashboard'
+      // Após login, sempre redireciona para dashboard
+      const redirectPath = '/dashboard'
       
-      console.log(`✅ Login bem-sucedido! Redirecionando para ${redirectPath}`, { needsOnboarding })
+      console.log(`✅ Login bem-sucedido! Redirecionando para ${redirectPath}`)
       
       // Aguarda um pouco para garantir que o estado seja atualizado
       await new Promise(resolve => setTimeout(resolve, 100))
@@ -596,20 +595,20 @@ export function useAuth() {
       
       setIsLoading(false)
 
-      // Novo usuário sempre vai para /onboarding para completar cadastro
+      // Após registro, sempre redireciona para dashboard
       try {
-        router.replace('/setup')
+        router.replace('/dashboard')
         // Fallback: se após 1 segundo ainda estiver na mesma página, força redirecionamento
         setTimeout(() => {
-          if (typeof window !== 'undefined' && window.location.pathname !== '/setup') {
+          if (typeof window !== 'undefined' && window.location.pathname !== '/dashboard') {
             console.log('⚠️ Router não funcionou, usando window.location como fallback')
-            window.location.href = '/setup'
+            window.location.href = '/dashboard'
           }
         }, 1000)
       } catch (routerError) {
         console.error('❌ Erro no router, usando window.location:', routerError)
         if (typeof window !== 'undefined') {
-          window.location.href = '/setup'
+          window.location.href = '/dashboard'
         }
       }
     } catch (err) {
@@ -657,7 +656,7 @@ export function useAuth() {
   }
 
   /**
-   * Atualiza os dados do usuário atual (usado após onboarding)
+   * Atualiza os dados do usuário atual
    * Atualiza tanto o localStorage quanto o estado do hook
    */
   const updateUser = async (updates: Partial<LocalUser>) => {
