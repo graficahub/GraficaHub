@@ -10,8 +10,10 @@ import { isProfileComplete } from '@/lib/utils/profile';
  * - Verifica sessão do Supabase Auth usando cookies
  * - Verifica se o perfil está completo (campos obrigatórios preenchidos)
  * - Se não houver sessão → redirect para /login
- * - Se perfil incompleto → redirect para /perfil/completar
+ * - Se perfil incompleto → redirect para /setup/perfil
  * - Se houver usuário com perfil completo → renderiza o layout normalmente
+ * 
+ * Este é o ÚNICO guard que verifica perfil completo no sistema.
  */
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const supabase = createSupabaseServerClient();
@@ -32,12 +34,13 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   }
 
   // Verifica se o perfil está completo
+  // Este é o ÚNICO guard que verifica perfil completo
   const profile = await getUserProfile(user.id);
   const profileIsComplete = isProfileComplete(profile);
 
   // Se o perfil não estiver completo, redireciona para completar cadastro
   if (!profileIsComplete) {
-    redirect('/perfil/completar');
+    redirect('/setup/perfil');
   }
 
   // Usuário autenticado com perfil completo → renderiza children normalmente

@@ -11,6 +11,10 @@ import { maskCpfCnpj, maskPhone, maskCEP } from '@/lib/utils/masks'
 import { validateCpfCnpj, validatePhone, validateCep, validateAddress, removeMask } from '@/lib/utils/validation'
 import { isProfileComplete } from '@/lib/utils/profile'
 
+/**
+ * Página para completar perfil básico
+ * Esta é a ÚNICA página que coleta dados básicos quando faltam
+ */
 export default function CompletarPerfilPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
@@ -69,7 +73,7 @@ export default function CompletarPerfilPage() {
           setCep(profile.cep || '')
         }
 
-        // Verifica se o perfil já está completo
+        // Verifica se o perfil já está completo - se sim, redireciona para dashboard
         if (isProfileComplete(profile)) {
           router.replace('/dashboard')
           return
@@ -181,7 +185,7 @@ export default function CompletarPerfilPage() {
         return
       }
 
-      // Redireciona para o dashboard
+      // Redireciona para o dashboard (o layout vai verificar se está completo)
       router.replace('/dashboard')
     } catch (err) {
       console.error('Erro ao salvar perfil:', err)
@@ -230,7 +234,7 @@ export default function CompletarPerfilPage() {
                 <Input
                   label="Nome *"
                   type="text"
-                  placeholder="Digite seu nome completo"
+                  placeholder="Seu nome ou nome da empresa"
                   value={name}
                   onChange={(e) => {
                     setName(e.target.value)

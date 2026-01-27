@@ -34,8 +34,7 @@ export const config = {
     '/admin/:path*',
     '/pedido/:path*',
     '/pedidos/:path*',
-    '/setup',
+    '/setup/:path*',
     '/settings',
-    '/perfil/:path*',
   ],
 }

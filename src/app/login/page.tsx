@@ -105,19 +105,10 @@ export default function LoginPage() {
         // Continua com role = 'user' (já definido como default)
       }
 
-      // Verifica se o perfil está completo
-      let needsProfileCompletion = false
-      if (supabase) {
-        const { data: profile } = await supabase
-          .from('users')
-          .select('email, name, cpf_cnpj, phone, address, cep')
-          .eq('id', userId)
-          .maybeSingle()
-        needsProfileCompletion = !isProfileComplete(profile)
-      }
-
-      // Se role for 'admin', vai para /admin; caso contrário, vai para /perfil/completar se faltar dados
-      const redirectPath = role === "admin" ? "/admin" : (needsProfileCompletion ? "/perfil/completar" : "/dashboard");
+      // Após login, redireciona direto para dashboard
+      // O dashboard layout será responsável por verificar se o perfil está completo
+      // Se role for 'admin', vai para /admin; caso contrário, vai para /dashboard
+      const redirectPath = role === "admin" ? "/admin" : "/dashboard";
       console.log(`🚀 Redirecionando para: ${redirectPath}`);
 
       setIsLoading(false); // Desativa loading antes de redirecionar
