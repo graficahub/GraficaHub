@@ -22,6 +22,7 @@ import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import { signUpWithEmail, getUserRole, updateUserProfile } from "@/lib/auth";
 import { supabase } from '@/lib/supabaseClient'
+import { isProfileComplete } from '@/lib/utils/profile'
 import { maskCpfCnpj, maskPhone, maskCEP } from '@/lib/utils/masks'
 import { validateCpfCnpj, validatePhone, validateCep, validateAddress, removeMask } from '@/lib/utils/validation'
 
@@ -171,9 +172,26 @@ export default function RegisterPage() {
         }
       }
 
+      // Passo 3: Verifica se o perfil está completo após o update
+      let profileIsComplete = false;
+      if (profileUpdated && supabase) {
+        // Busca o perfil atualizado para verificar se está completo
+        const { data: updatedProfile } = await supabase
+          .from('users')
+          .select('email, name, cpf_cnpj, phone, address, cep')
+          .eq('id', userId)
+          .maybeSingle();
+
+        if (updatedProfile) {
+          profileIsComplete = isProfileComplete(updatedProfile);
+          console.log(profileIsComplete 
+            ? "✅ Perfil está completo após atualização" 
+            : "⚠️ Perfil ainda está incompleto após atualização");
+        }
+      }
+
       if (!profileUpdated) {
         console.warn("⚠️ Não foi possível atualizar perfil automaticamente. Usuário será redirecionado para /setup/perfil");
-        // Os dados serão salvos temporariamente ou o usuário preencherá novamente em /setup/perfil
       }
 
       // Passo 4: Busca role
@@ -187,17 +205,19 @@ export default function RegisterPage() {
         // Continua com role = 'user' (já definido como default)
       }
 
-      // Passo 5: Redireciona
+      // Passo 5: Redireciona baseado no estado do perfil
       // Se role for 'admin', vai para /admin
-      // Se perfil foi atualizado, vai para /dashboard (layout verificará se está completo)
-      // Se perfil não foi atualizado, vai para /setup/perfil para completar
+      // Se perfil está completo, vai para /dashboard
+      // Se perfil está incompleto, vai para /setup/perfil
       let redirectPath: string;
       if (role === "admin") {
         redirectPath = "/admin";
-      } else if (profileUpdated) {
+      } else if (profileIsComplete) {
         redirectPath = "/dashboard";
+        console.log("✅ Perfil completo - redirecionando para dashboard");
       } else {
         redirectPath = "/setup/perfil";
+        console.log("⚠️ Perfil incompleto - redirecionando para completar perfil");
       }
       console.log(`🚀 Redirecionando para: ${redirectPath}`);
 

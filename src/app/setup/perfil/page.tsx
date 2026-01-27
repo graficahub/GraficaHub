@@ -35,10 +35,14 @@ export default function CompletarPerfilPage() {
 
   // Carrega dados do usuário ao montar o componente
   useEffect(() => {
+    let isMounted = true; // Flag para evitar atualizações após desmontagem
+
     async function loadUserProfile() {
       if (!supabase) {
-        setError('Supabase não está configurado')
-        setIsLoading(false)
+        if (isMounted) {
+          setError('Supabase não está configurado')
+          setIsLoading(false)
+        }
         return
       }
 
@@ -46,7 +50,9 @@ export default function CompletarPerfilPage() {
         const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
         
         if (authError || !authUser) {
-          router.replace('/login')
+          if (isMounted) {
+            router.replace('/login')
+          }
           return
         }
 
@@ -59,36 +65,48 @@ export default function CompletarPerfilPage() {
 
         if (profileError) {
           console.error('Erro ao buscar perfil:', profileError)
-          setError('Erro ao carregar dados do perfil')
-          setIsLoading(false)
+          if (isMounted) {
+            setError('Erro ao carregar dados do perfil')
+            setIsLoading(false)
+          }
           return
         }
 
-        // Preenche campos com dados existentes
-        if (profile) {
+        // Verifica se o perfil já está completo ANTES de preencher campos
+        // Se completo, redireciona imediatamente para dashboard
+        if (isProfileComplete(profile)) {
+          console.log('✅ Perfil já está completo - redirecionando para dashboard')
+          if (isMounted) {
+            router.replace('/dashboard')
+          }
+          return
+        }
+
+        // Se não está completo, preenche campos com dados existentes para edição
+        if (isMounted && profile) {
           setEmail(profile.email || '')
           setName(profile.name || '')
           setCpfCnpj(profile.cpf_cnpj || '')
           setPhone(profile.phone || '')
           setAddress(profile.address || '')
           setCep(profile.cep || '')
+          setIsLoading(false)
         }
-
-        // Verifica se o perfil já está completo - se sim, redireciona para dashboard
-        if (isProfileComplete(profile)) {
-          router.replace('/dashboard')
-          return
-        }
-
-        setIsLoading(false)
       } catch (err) {
         console.error('Erro ao carregar perfil:', err)
-        setError('Erro ao carregar dados do perfil')
-        setIsLoading(false)
+        if (isMounted) {
+          setError('Erro ao carregar dados do perfil')
+          setIsLoading(false)
+        }
       }
     }
 
     loadUserProfile()
+
+    // Cleanup: marca como desmontado
+    return () => {
+      isMounted = false
+    }
   }, [router])
 
   // Validação do formulário
