@@ -12,7 +12,7 @@ import Select from '@/components/ui/Select'
 import Sidebar, { SidebarToggle } from '@/components/Sidebar'
 import HeaderDashboard from '@/components/HeaderDashboard'
 import ImpersonateBanner from '@/components/admin/ImpersonateBanner'
-import { isPreviewMode } from '@/utils/adminData'
+import { isImpersonating } from '@/utils/impersonate'
 import PendingOrdersNotification from '@/components/PendingOrdersNotification'
 import MetricCard from '@/components/MetricCard'
 import { Order, OrderStatus, loadOrdersFromStorage } from '@/types/orders'
@@ -257,7 +257,7 @@ export default function DashboardPage() {
       {/* Conteúdo principal */}
       <main className="md:ml-64 min-h-screen">
         {/* Banner de visualização como usuário (apenas se não for preview mode) */}
-        {!isPreviewMode() && <ImpersonateBanner />}
+        {isImpersonating() && <ImpersonateBanner />}
         {/* Notificação de pedidos pendentes */}
         <PendingOrdersNotification />
         

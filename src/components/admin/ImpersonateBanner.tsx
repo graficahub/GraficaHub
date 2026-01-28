@@ -2,16 +2,25 @@
 
 import { useRouter } from 'next/navigation'
 import { AlertCircle, X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { clearAdminBackup, getAdminBackup } from '@/utils/impersonate'
-import { setCurrentUser } from '@/utils/admin'
+import { getCurrentUser, setCurrentUser } from '@/utils/admin'
 
 export default function ImpersonateBanner() {
   const router = useRouter()
   const [isVisible, setIsVisible] = useState(true)
+  const adminBackup = getAdminBackup()
+  const currentUser = getCurrentUser()
+  const hasValidBackup =
+    !!adminBackup?.email && adminBackup.role === 'admin' && currentUser?.role === 'user'
+
+  useEffect(() => {
+    if (!hasValidBackup) {
+      clearAdminBackup()
+    }
+  }, [hasValidBackup])
 
   const handleReturnToAdmin = () => {
-    const adminBackup = getAdminBackup()
     if (adminBackup) {
       setCurrentUser(adminBackup)
       clearAdminBackup()
@@ -19,7 +28,7 @@ export default function ImpersonateBanner() {
     }
   }
 
-  if (!isVisible) return null
+  if (!isVisible || !hasValidBackup) return null
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-500/20 border-b border-yellow-500/30 backdrop-blur-sm">
