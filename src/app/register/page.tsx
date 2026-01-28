@@ -116,9 +116,10 @@ export default function RegisterPage() {
         options: {
           data: {
             name: name.trim(),
-            cep: cepCleaned,
-            telefone: phoneCleaned,
+            cep: cep.replace(/\D/g, ''),
+            telefone: phone,
             endereco: address.trim(),
+            cpf_cnpj: cpfCnpj ? cpfCnpjCleaned : undefined,
             role: 'user',
           },
         },
