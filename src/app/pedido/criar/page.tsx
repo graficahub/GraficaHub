@@ -13,6 +13,8 @@ import { loadMaterialCatalog } from '@/utils/materialCatalogStorage'
 import { createOrder } from '@/utils/ordersMVP'
 import Sidebar, { SidebarToggle } from '@/components/Sidebar'
 import HeaderDashboard from '@/components/HeaderDashboard'
+import { supabase } from '@/lib/supabaseClient'
+import CandidateShopsList, { CandidateShop } from '@/components/CandidateShopsList'
 
 export default function CriarPedidoPage() {
   const { user, isLoading } = useAuth()
@@ -20,10 +22,16 @@ export default function CriarPedidoPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [materials, setMaterials] = useState<any[]>([])
   const [selectedMaterial, setSelectedMaterial] = useState('')
+  const [selectedTechnology, setSelectedTechnology] = useState('')
+  const [orderCep, setOrderCep] = useState('')
   const [quantidade, setQuantidade] = useState('')
   const [observacoes, setObservacoes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [candidates, setCandidates] = useState<CandidateShop[]>([])
+  const [isLoadingCandidates, setIsLoadingCandidates] = useState(false)
+  const [candidatesError, setCandidatesError] = useState('')
+  const [orderCreated, setOrderCreated] = useState(false)
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -44,8 +52,9 @@ export default function CriarPedidoPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setCandidatesError('')
 
-    if (!selectedMaterial || !quantidade) {
+    if (!selectedMaterial || !selectedTechnology || !orderCep || !quantidade) {
       setError('Preencha todos os campos obrigatórios')
       return
     }
@@ -62,9 +71,9 @@ export default function CriarPedidoPage() {
 
     try {
       createOrder(user.email, selectedMaterial, qty, observacoes || undefined)
-      
-      // Sucesso
-      router.push('/dashboard/pedidos')
+      setOrderCreated(true)
+
+      await fetchCandidates()
     } catch (err) {
       console.error('Erro ao criar pedido:', err)
       setError('Erro ao criar pedido. Tente novamente.')
@@ -74,6 +83,54 @@ export default function CriarPedidoPage() {
   }
 
   const selectedMaterialData = materials.find(m => m.id === selectedMaterial)
+
+  useEffect(() => {
+    if (selectedMaterialData?.tecnologias?.length) {
+      setSelectedTechnology(selectedMaterialData.tecnologias[0])
+    } else {
+      setSelectedTechnology('')
+    }
+  }, [selectedMaterialData])
+
+  const fetchCandidates = async () => {
+    if (!supabase) {
+      setCandidatesError('Supabase não está configurado.')
+      return
+    }
+
+    setIsLoadingCandidates(true)
+    setCandidatesError('')
+
+    try {
+      const { data, error: rpcError } = await supabase.rpc('get_candidate_shops', {
+        p_order_cep: orderCep,
+        p_tecnologia: selectedTechnology,
+        p_material: selectedMaterial,
+        p_limit: 10,
+      })
+
+      console.log('📡 RPC get_candidate_shops retorno:', { data, error: rpcError })
+
+      if (rpcError) {
+        if (rpcError.message?.includes('CEP não encontrado em cep_geo')) {
+          setCandidatesError(
+            'CEP não encontrado. Complete o CEP do pedido ou registre o CEP no cache.'
+          )
+          return
+        }
+
+        setCandidatesError('Erro ao buscar gráficas candidatas. Tente novamente.')
+        return
+      }
+
+      setCandidates(Array.isArray(data) ? data : [])
+    } catch (rpcErr) {
+      console.error('❌ Erro ao chamar RPC get_candidate_shops:', rpcErr)
+      setCandidatesError('Erro ao buscar gráficas candidatas. Tente novamente.')
+    } finally {
+      setIsLoadingCandidates(false)
+    }
+  }
 
   if (!user) {
     return null
@@ -157,6 +214,31 @@ export default function CriarPedidoPage() {
                   )}
                 </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Tecnologia requerida *
+                  </label>
+                  <Select
+                    value={selectedTechnology}
+                    onChange={(e) => setSelectedTechnology(e.target.value)}
+                    options={[
+                      { value: '', label: 'Selecione a tecnologia' },
+                      ...(selectedMaterialData?.tecnologias || []).map((tech: string) => ({
+                        value: tech,
+                        label: tech,
+                      })),
+                    ]}
+                  />
+                </div>
+
+                <Input
+                  label="CEP do pedido *"
+                  type="text"
+                  value={orderCep}
+                  onChange={(e) => setOrderCep(e.target.value)}
+                  placeholder="Ex: 01310-100"
+                />
+
                 <Input
                   label="Quantidade *"
                   type="number"
@@ -198,13 +280,30 @@ export default function CriarPedidoPage() {
                     type="submit"
                     variant="primary"
                     fullWidth
-                    disabled={isSubmitting || !selectedMaterial || !quantidade}
+                    disabled={
+                      isSubmitting || !selectedMaterial || !selectedTechnology || !orderCep || !quantidade
+                    }
                   >
                     {isSubmitting ? 'Criando...' : 'Criar Pedido'}
                   </Button>
                 </div>
               </form>
             </Card>
+          )}
+
+          {orderCreated && (
+            <>
+              <CandidateShopsList
+                candidates={candidates}
+                isLoading={isLoadingCandidates}
+                error={candidatesError}
+              />
+              <div className="mt-6">
+                <Button variant="outline" onClick={() => router.push('/dashboard/pedidos')}>
+                  Ir para pedidos
+                </Button>
+              </div>
+            </>
           )}
         </div>
       </main>
