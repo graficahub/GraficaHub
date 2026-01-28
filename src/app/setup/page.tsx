@@ -36,14 +36,7 @@ export default function SetupPage() {
   const router = useRouter()
 
   // Estado do formulário
-  const [printers, setPrinters] = useState<Printer[]>([
-    {
-      id: Date.now().toString(),
-      name: '',
-      width: '',
-      inkTechnology: '',
-    }
-  ])
+  const [printers, setPrinters] = useState<Printer[]>([])
 
   // Estado de validação e erros
   const [errors, setErrors] = useState<{
