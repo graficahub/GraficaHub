@@ -96,7 +96,22 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      console.log("Enviando formulário de REGISTRO", { email, name });
+      const payload = {
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            name: name?.trim() ?? '',
+            cep: (cep ?? '').replace(/\D/g, ''),
+            telefone: (phone ?? '').replace(/\D/g, ''),
+            endereco: address?.trim() ?? '',
+            cpf_cnpj: (cpfCnpj ?? '').replace(/\D/g, ''),
+            role: 'user',
+          },
+        },
+      }
+
+      console.log('Payload signup:', payload)
 
       // Remove máscaras antes de salvar
       const cpfCnpjCleaned = removeMask(cpfCnpj)
@@ -110,20 +125,8 @@ export default function RegisterPage() {
       }
 
       // Passo 1: Cria usuário no Auth (sem tocar em public.users)
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          data: {
-            name: name?.trim(),
-            cep: cep.replace(/\D/g, ''),
-            telefone: phone?.replace(/\D/g, ''),
-            endereco: address?.trim(),
-            cpf_cnpj: cpfCnpj?.replace(/\D/g, ''),
-            role: 'user',
-          },
-        },
-      });
+      const { data, error } = await supabase.auth.signUp(payload)
+      if (error) throw error
 
       if (error || !data?.user) {
         console.error("Erro Supabase registro", error);
