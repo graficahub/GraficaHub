@@ -20,7 +20,7 @@ import Link from 'next/link'
 import Card from '@/components/ui/Card'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
-import { signUpWithEmail, getUserRole, updateUserProfile } from "@/lib/auth";
+import { getUserRole, updateUserProfile } from "@/lib/auth";
 import { supabase } from '@/lib/supabaseClient'
 import { maskCpfCnpj, maskPhone, maskCEP } from '@/lib/utils/masks'
 import { validateCpfCnpj, validatePhone, validateCep, validateAddress, removeMask } from '@/lib/utils/validation'
@@ -100,14 +100,23 @@ export default function RegisterPage() {
 
       // Remove máscaras antes de salvar
       const cpfCnpjCleaned = removeMask(cpfCnpj)
-      const phoneCleaned = removeMask(phone)
-      const cepCleaned = removeMask(cep)
+      const phoneCleaned = phone.replace(/\D/g, '')
+      const cepCleaned = cep.replace(/\D/g, '')
 
       // Passo 1: Cria usuário no Auth (sem tocar em public.users)
-      const { data, error } = await signUpWithEmail(
-        email.trim(),
-        password
-      );
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            name: name.trim(),
+            cep: cepCleaned,
+            telefone: phoneCleaned,
+            endereco: address.trim(),
+            role: 'user',
+          },
+        },
+      });
 
       if (error || !data?.user) {
         console.error("Erro Supabase registro", error);
