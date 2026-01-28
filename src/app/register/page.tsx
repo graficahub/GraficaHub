@@ -111,15 +111,15 @@ export default function RegisterPage() {
 
       // Passo 1: Cria usuário no Auth (sem tocar em public.users)
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: email.trim(),
         password,
         options: {
           data: {
-            name,
+            name: name?.trim(),
             cep: cep.replace(/\D/g, ''),
-            telefone: phone,
-            endereco: address,
-            cpf_cnpj: cpfCnpj,
+            telefone: phone?.replace(/\D/g, ''),
+            endereco: address?.trim(),
+            cpf_cnpj: cpfCnpj?.replace(/\D/g, ''),
             role: 'user',
           },
         },
