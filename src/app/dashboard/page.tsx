@@ -59,11 +59,7 @@ export default function DashboardPage() {
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([])
   const [activeFilter, setActiveFilter] = useState<FilterStatus>('Todos')
   const [printers, setPrinters] = useState<Printer[]>([])
-  const [materials, setMaterials] = useState<Material[]>([
-    { id: '1', name: 'Lona 440g', technology: 'EcoSolvente/Solvente' },
-    { id: '2', name: 'Adesivo vinil', technology: 'EcoSolvente/Solvente' },
-    { id: '3', name: 'Papel fotográfico', technology: 'Sublimação' },
-  ])
+  const [materials, setMaterials] = useState<Material[]>([])
 
   // Estados para modais
   const [showAddPrinter, setShowAddPrinter] = useState(false)
@@ -108,69 +104,7 @@ export default function DashboardPage() {
 
   const loadOrders = () => {
     const storedOrders = loadOrdersFromStorage()
-    
-    // Se não houver pedidos salvos, mantém os mockOrders iniciais para demonstração
-    if (storedOrders.length === 0) {
-      const initialOrders: Order[] = [
-        { 
-          id: 'PED-001', 
-          service: 'Lona 440g', 
-          category: 'Lona',
-          quantity: 1,
-          status: 'Em aberto', 
-          deadline: 'Hoje',
-          createdAt: new Date().toISOString(),
-        },
-        { 
-          id: 'PED-002', 
-          service: 'Adesivo vinil', 
-          category: 'Adesivo',
-          quantity: 1,
-          status: 'Em produção', 
-          deadline: 'Amanhã',
-          createdAt: new Date().toISOString(),
-        },
-        { 
-          id: 'PED-003', 
-          service: 'Banner 510g', 
-          category: 'Banner',
-          quantity: 1,
-          status: 'Em aberto', 
-          deadline: '2 dias',
-          createdAt: new Date().toISOString(),
-        },
-        { 
-          id: 'PED-004', 
-          service: 'Papel fotográfico', 
-          category: 'Papel fotográfico',
-          quantity: 1,
-          status: 'Concluído', 
-          deadline: 'Concluído',
-          createdAt: new Date().toISOString(),
-        },
-        { 
-          id: 'PED-005', 
-          service: 'Tecido poliéster', 
-          category: 'Tecido poliéster',
-          quantity: 1,
-          status: 'Em produção', 
-          deadline: 'Hoje',
-          createdAt: new Date().toISOString(),
-        },
-        { 
-          id: 'PED-006', 
-          service: 'Adesivo perfurado', 
-          category: 'Adesivo perfurado',
-          quantity: 1,
-          status: 'Em aberto', 
-          deadline: '3 dias',
-          createdAt: new Date().toISOString(),
-        },
-      ]
-      setOrders(initialOrders)
-    } else {
-      setOrders(storedOrders)
-    }
+    setOrders(storedOrders)
   }
 
   // Aplica filtro
@@ -554,9 +488,14 @@ export default function DashboardPage() {
 
                   <div className="space-y-3">
                     {printers.length === 0 ? (
-                      <p className="text-sm text-gray-600 text-center py-4">
-                        Nenhuma impressora cadastrada
-                      </p>
+                      <div className="text-center py-4">
+                        <p className="text-sm text-gray-600 mb-3">
+                          Nenhuma impressora cadastrada
+                        </p>
+                        <Button variant="primary" onClick={() => setShowAddPrinter(true)}>
+                          Adicionar
+                        </Button>
+                      </div>
                     ) : (
                       printers.map((printer) => (
                         <div
@@ -591,15 +530,26 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="space-y-3">
-                    {materials.map((material) => (
-                      <div
-                        key={material.id}
-                        className="p-3 bg-white/5 rounded-lg border border-white/10"
-                      >
-                        <p className="text-sm font-medium text-gray-900">{material.name}</p>
-                        <p className="text-xs text-gray-600 mt-1">{material.technology}</p>
+                    {materials.length === 0 ? (
+                      <div className="text-center py-4">
+                        <p className="text-sm text-gray-600 mb-3">
+                          Nenhum material cadastrado
+                        </p>
+                        <Button variant="primary" onClick={() => setShowAddMaterial(true)}>
+                          Adicionar
+                        </Button>
                       </div>
-                    ))}
+                    ) : (
+                      materials.map((material) => (
+                        <div
+                          key={material.id}
+                          className="p-3 bg-white/5 rounded-lg border border-white/10"
+                        >
+                          <p className="text-sm font-medium text-gray-900">{material.name}</p>
+                          <p className="text-xs text-gray-600 mt-1">{material.technology}</p>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </Card>
               </div>

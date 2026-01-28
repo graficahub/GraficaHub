@@ -242,6 +242,7 @@ export const testGraphics: TestGraphic[] = [
  */
 export function initializeTestGraphics() {
   if (typeof window === 'undefined') return
+  if (process.env.NEXT_PUBLIC_DEMO_MODE !== 'true') return
 
   try {
     const stored = localStorage.getItem('graficaHubUsers')

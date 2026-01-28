@@ -15,6 +15,7 @@ export default function PropostasPage() {
   const router = useRouter()
   const params = useParams()
   const pedidoId = params.id as string
+  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
 
   // Proteção de rota
   useEffect(() => {
@@ -27,8 +28,10 @@ export default function PropostasPage() {
   useEffect(() => {
     try {
       if (pedidoId) {
-        // Simula carregamento - em produção viria de API
-        const proposalsForPedido = mockProposals.filter(p => p.pedidoId === pedidoId)
+        // Simula carregamento apenas em modo demo - em produção viria de API
+        const proposalsForPedido = isDemoMode
+          ? mockProposals.filter(p => p.pedidoId === pedidoId)
+          : []
         if (proposalsForPedido.length === 0) {
           logEvent('warn', 'Nenhuma proposta encontrada para o pedido', {
             userId: user?.email,
@@ -117,7 +120,9 @@ export default function PropostasPage() {
 
   // Filtra propostas para o pedido atual (mock)
   // Em produção, isso viria de uma API baseado no pedidoId
-  const proposalsForPedido = mockProposals.filter(p => p.pedidoId === pedidoId)
+  const proposalsForPedido = isDemoMode
+    ? mockProposals.filter(p => p.pedidoId === pedidoId)
+    : []
 
   return (
     <div className="min-h-screen w-full bg-gray-50">
@@ -145,10 +150,7 @@ export default function PropostasPage() {
 
         {/* Conteúdo principal */}
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
-          <ProposalsList
-            proposals={proposalsForPedido.length > 0 ? proposalsForPedido : mockProposals}
-            onSelectProposal={handleSelectProposal}
-          />
+          <ProposalsList proposals={proposalsForPedido} onSelectProposal={handleSelectProposal} />
         </div>
       </main>
     </div>
