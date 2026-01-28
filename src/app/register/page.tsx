@@ -103,6 +103,12 @@ export default function RegisterPage() {
       const phoneCleaned = phone.replace(/\D/g, '')
       const cepCleaned = cep.replace(/\D/g, '')
 
+      if (!supabase) {
+        setError('Supabase não está configurado. Verifique as variáveis de ambiente.')
+        setIsLoading(false)
+        return
+      }
+
       // Passo 1: Cria usuário no Auth (sem tocar em public.users)
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
